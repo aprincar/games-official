@@ -1,0 +1,39 @@
+{
+  "manifestVersion": 1,
+  "id": "aprincar.letter-hunt",
+  "kind": "game",
+  "version": "1.1.0",
+  "publisher": "aprincar",
+  "name": {
+    "pt-BR": "Caça às Letras"
+  },
+  "description": {
+    "pt-BR": "Encontre letras em movimento e avance por desafios."
+  },
+  "engines": {
+    "aprincar": "^1.0.0",
+    "sdkProtocol": 1
+  },
+  "entrypoints": {
+    "game": "game.html"
+  },
+  "permissions": [],
+  "optionalPermissions": [],
+  "contributes": {
+    "skills": [
+      "literacy.letter.recognition"
+    ],
+    "secondarySkills": [],
+    "ageGuidance": {
+      "min": 4,
+      "max": 7
+    },
+    "interests": [
+      "letters",
+      "literacy"
+    ],
+    "playType": "learning"
+  },
+  "offline": true,
+  "bundleMode": "single-html"
+}

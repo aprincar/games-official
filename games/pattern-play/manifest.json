@@ -1,0 +1,41 @@
+{
+  "manifestVersion": 1,
+  "id": "aprincar.pattern-play",
+  "kind": "game",
+  "version": "1.1.0",
+  "publisher": "aprincar",
+  "name": {
+    "pt-BR": "Trem dos Padrões"
+  },
+  "description": {
+    "pt-BR": "Descubra qual peça continua cada sequência."
+  },
+  "engines": {
+    "aprincar": "^1.0.0",
+    "sdkProtocol": 1
+  },
+  "entrypoints": {
+    "game": "game.html"
+  },
+  "permissions": [],
+  "optionalPermissions": [],
+  "contributes": {
+    "skills": [
+      "logic.patterns.ab"
+    ],
+    "secondarySkills": [
+      "logic.patterns.abc"
+    ],
+    "ageGuidance": {
+      "min": 4,
+      "max": 8
+    },
+    "interests": [
+      "logic",
+      "patterns"
+    ],
+    "playType": "learning"
+  },
+  "offline": true,
+  "bundleMode": "single-html"
+}

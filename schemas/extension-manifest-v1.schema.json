@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Aprincar Extension Manifest v1",
+  "type": "object",
+  "required": [
+    "manifestVersion",
+    "id",
+    "kind",
+    "version",
+    "publisher",
+    "name",
+    "engines",
+    "entrypoints",
+    "permissions",
+    "optionalPermissions",
+    "contributes",
+    "offline",
+    "bundleMode"
+  ],
+  "properties": {
+    "manifestVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]*[a-z0-9]$"
+    },
+    "kind": {
+      "enum": [
+        "game",
+        "theme",
+        "curriculum",
+        "content"
+      ]
+    },
+    "version": {
+      "type": "string"
+    },
+    "publisher": {
+      "type": "string"
+    },
+    "name": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "bundleMode": {
+      "const": "single-html"
+    },
+    "offline": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": true
+}

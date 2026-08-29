@@ -1,0 +1,41 @@
+{
+  "manifestVersion": 1,
+  "id": "aprincar.write-a",
+  "kind": "game",
+  "version": "1.1.0",
+  "publisher": "aprincar",
+  "name": {
+    "pt-BR": "Ateliê de Letras"
+  },
+  "description": {
+    "pt-BR": "Desenhe letras com apoio visual que diminui conforme você avança."
+  },
+  "engines": {
+    "aprincar": "^1.0.0",
+    "sdkProtocol": 1
+  },
+  "entrypoints": {
+    "game": "game.html"
+  },
+  "permissions": [
+    "handwriting"
+  ],
+  "optionalPermissions": [],
+  "contributes": {
+    "skills": [
+      "writing.trace-letter"
+    ],
+    "secondarySkills": [],
+    "ageGuidance": {
+      "min": 4,
+      "max": 8
+    },
+    "interests": [
+      "letters",
+      "writing"
+    ],
+    "playType": "practice"
+  },
+  "offline": true,
+  "bundleMode": "single-html"
+}

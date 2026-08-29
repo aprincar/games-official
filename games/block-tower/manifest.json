@@ -1,0 +1,40 @@
+{
+  "manifestVersion": 1,
+  "id": "aprincar.block-tower",
+  "kind": "game",
+  "version": "1.1.0",
+  "publisher": "aprincar",
+  "name": {
+    "pt-BR": "Torre de Blocos"
+  },
+  "description": {
+    "pt-BR": "Monte torres com a quantidade certa de blocos."
+  },
+  "engines": {
+    "aprincar": "^1.0.0",
+    "sdkProtocol": 1
+  },
+  "entrypoints": {
+    "game": "game.html"
+  },
+  "permissions": [],
+  "optionalPermissions": [],
+  "contributes": {
+    "skills": [
+      "math.counting.1-10"
+    ],
+    "secondarySkills": [],
+    "ageGuidance": {
+      "min": 4,
+      "max": 7
+    },
+    "interests": [
+      "math",
+      "counting",
+      "construction"
+    ],
+    "playType": "learning"
+  },
+  "offline": true,
+  "bundleMode": "single-html"
+}

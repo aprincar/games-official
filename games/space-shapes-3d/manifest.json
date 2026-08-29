@@ -1,0 +1,40 @@
+{
+  "manifestVersion": 1,
+  "id": "aprincar.space-shapes-3d",
+  "kind": "game",
+  "version": "1.1.0",
+  "publisher": "aprincar",
+  "name": {
+    "pt-BR": "Formas no Espaço 3D"
+  },
+  "description": {
+    "pt-BR": "Gire sólidos em 3D e reconheça suas formas."
+  },
+  "engines": {
+    "aprincar": "^1.0.0",
+    "sdkProtocol": 1
+  },
+  "entrypoints": {
+    "game": "game.html"
+  },
+  "permissions": [],
+  "optionalPermissions": [],
+  "contributes": {
+    "skills": [
+      "math.geometry.solids"
+    ],
+    "secondarySkills": [],
+    "ageGuidance": {
+      "min": 5,
+      "max": 10
+    },
+    "interests": [
+      "geometry",
+      "3d",
+      "exploration"
+    ],
+    "playType": "learning"
+  },
+  "offline": true,
+  "bundleMode": "single-html"
+}

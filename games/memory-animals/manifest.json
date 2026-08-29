@@ -1,0 +1,40 @@
+{
+  "manifestVersion": 1,
+  "id": "aprincar.memory-animals",
+  "kind": "game",
+  "version": "1.1.0",
+  "publisher": "aprincar",
+  "name": {
+    "pt-BR": "Memória dos Bichos"
+  },
+  "description": {
+    "pt-BR": "Encontre pares em tabuleiros que crescem automaticamente."
+  },
+  "engines": {
+    "aprincar": "^1.0.0",
+    "sdkProtocol": 1
+  },
+  "entrypoints": {
+    "game": "game.html"
+  },
+  "permissions": [],
+  "optionalPermissions": [],
+  "contributes": {
+    "skills": [
+      "perception.visual.discrimination"
+    ],
+    "secondarySkills": [],
+    "ageGuidance": {
+      "min": 3,
+      "max": 10
+    },
+    "interests": [
+      "memory",
+      "animals",
+      "logic"
+    ],
+    "playType": "practice"
+  },
+  "offline": true,
+  "bundleMode": "single-html"
+}
