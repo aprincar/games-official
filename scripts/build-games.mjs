@@ -17,7 +17,7 @@ const css = `
 for (const game of games) {
   const dir = path.join(gamesDir, game.slug);
   fs.mkdirSync(dir, { recursive: true });
-  const config = JSON.stringify({ name: game.name, mode: game.mode, variant: game.variant, skillId: game.skillId });
+  const config = JSON.stringify({ name: game.name, mode: game.mode, variant: game.variant, answer: game.answer, skillId: game.skillId });
   const engine = game.mode === 'three' ? `${three}\n${threeRuntime}` : `${phaser}\n${phaserRuntime}`;
   const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>${game.name} — Aprincar</title><style>${css}</style></head><body><div id="game"></div><script>window.APRINCAR_GAME_CONFIG=${config};</script><script>${sdk}</script><script>${challengeSource}</script><script>${engine}</script></body></html>`;
   const manifest = {
