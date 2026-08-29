@@ -1,4 +1,11 @@
 #!/bin/sh
 set -eu
 
-npm run check
+node --test tests/*.test.mjs
+node scripts/build-games.mjs
+node --check src/runtime/sdk-bridge.js
+node --check src/runtime/phaser-runtime.js
+node --check src/runtime/three-runtime.js
+node scripts/check-generated.mjs
+node scripts/validate.mjs
+node scripts/build-registry.mjs
