@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+
+staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
+for file in $staged_files; do
+  case "$file" in
+    .env|.env.*|*.pem|*.key|id_rsa|id_ed25519)
+      echo "Commit bloqueado: arquivo sensível staged: $file" >&2
+      exit 1
+      ;;
+  esac
+done

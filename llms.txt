@@ -1,0 +1,4 @@
+# Aprincar Official Games
+
+Deterministic challenge generators and self-contained Phaser/Three.js game artifacts. Start with docs/README.md, src/challenges/index.mjs, src/config/games.mjs, and tests/challenges.test.mjs.
+
