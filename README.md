@@ -35,3 +35,5 @@ npm run check
 ```
 
 O gate executa fuzz dos geradores, gera todos os `game.html`, valida manifests/skills/permissões e produz o registry com hashes SHA-256.
+
+Leia também `docs/README.md` e `docs/ARCHITECTURE.md` antes de alterar geradores ou runtimes.
