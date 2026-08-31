@@ -35,6 +35,19 @@
     ],
     "playType": "learning"
   },
+  "experience": {
+    "fantasy": "Obra da torre",
+    "mechanic": "stack",
+    "interaction": "drag",
+    "progression": {
+      "maxLevel": 5,
+      "adaptive": true
+    },
+    "learningSignals": [
+      "quantity",
+      "sequencing"
+    ]
+  },
   "offline": true,
   "bundleMode": "single-html"
 }

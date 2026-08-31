@@ -34,6 +34,19 @@
     ],
     "playType": "learning"
   },
+  "experience": {
+    "fantasy": "Caça ao tesouro das letras",
+    "mechanic": "tap-chase",
+    "interaction": "tap",
+    "progression": {
+      "maxLevel": 5,
+      "adaptive": true
+    },
+    "learningSignals": [
+      "recognition",
+      "attention"
+    ]
+  },
   "offline": true,
   "bundleMode": "single-html"
 }

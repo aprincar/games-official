@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Pintura Livre — Aprincar</title><style>
-*{box-sizing:border-box}html,body,#game{width:100%;height:100%;margin:0;overflow:hidden}body{font-family:Inter,ui-rounded,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f6f2;color:#242523}canvas{display:block;touch-action:none}.three-ui{position:absolute;z-index:3;left:0;right:0;top:0;padding:20px 28px;pointer-events:none;text-align:center}.three-brand{position:absolute;left:22px;top:14px}.aprincar-game-lockup{display:flex;align-items:center;gap:8px;color:#2563eb;font:900 18px/1 ui-rounded,"Arial Rounded MT Bold","Trebuchet MS",Inter,system-ui,sans-serif}.aprincar-game-lockup svg{width:36px;height:36px;display:block}.aprincar-game-wordmark{display:inline-flex;letter-spacing:-.04em}.three-ui #three-level{position:absolute;right:26px;top:23px;color:#2563eb;font-weight:800}.three-ui h1{margin:28px auto 4px;font-size:clamp(24px,4vw,36px)}.three-ui p{margin:0;color:#6f716d;font-weight:700}#three-canvas{width:100%;height:100%}</style></head><body><div id="game"></div><script>window.APRINCAR_GAME_CONFIG={"name":"Pintura Livre","mode":"paint","variant":"creative","skillId":"creativity.visual-expression"};</script><script>(()=>{
+*{box-sizing:border-box}html,body,#game{width:100%;height:100%;margin:0;overflow:hidden}body{font-family:Inter,ui-rounded,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f6f2;color:#242523}canvas{display:block;touch-action:none}.three-ui{position:absolute;z-index:3;left:0;right:0;top:0;padding:20px 28px;pointer-events:none;text-align:center}.three-brand{position:absolute;left:22px;top:14px}.aprincar-game-lockup{display:flex;align-items:center;gap:8px;color:#2563eb;font:900 18px/1 ui-rounded,"Arial Rounded MT Bold","Trebuchet MS",Inter,system-ui,sans-serif}.aprincar-game-lockup svg{width:36px;height:36px;display:block}.aprincar-game-wordmark{display:inline-flex;letter-spacing:-.04em}.three-ui #three-level{position:absolute;right:26px;top:23px;color:#2563eb;font-weight:800}.three-ui h1{margin:28px auto 4px;font-size:clamp(24px,4vw,36px)}.three-ui p{margin:0;color:#6f716d;font-weight:700}#three-canvas{width:100%;height:100%}</style></head><body><div id="game"></div><script>window.APRINCAR_GAME_CONFIG={"name":"Pintura Livre","mode":"paint","variant":"creative","skillId":"creativity.visual-expression","fantasy":"Estúdio de pintura","mechanic":"free-draw"};</script><script>(()=>{
   let port=null, readyResolve;
   const pending=new Map();
   const connected=new Promise(r=>readyResolve=r);
@@ -179,42 +179,886 @@ function generateMemoryChallenge({ rng = Math.random, seed = Date.now(), level =
   window.APRINCAR_BRAND = Object.freeze({ colors, fontFamily, markSvg, lockupHtml, addPhaser });
 })();
 
+// Procedural Web Audio Synthesizer for Aprincar Games (Zero external assets, zero CDN)
+window.AprincarAudio = (() => {
+  let ctx = null;
+  let muted = false;
+
+  function getContext() {
+    if (!ctx && (window.AudioContext || window.webkitAudioContext)) {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+    return ctx;
+  }
+
+  function playTone(freq, type, duration, gainStart = 0.15, gainEnd = 0.001) {
+    if (muted) return;
+    try {
+      const audioCtx = getContext();
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const now = audioCtx.currentTime;
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(gainStart, now);
+      gain.gain.exponentialRampToValueAtTime(gainEnd, now + duration);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(now);
+      osc.stop(now + duration);
+    } catch (_) {}
+  }
+
+  return {
+    setMuted(val) { muted = !!val; },
+    isMuted() { return muted; },
+    pop() { playTone(520, 'sine', 0.1, 0.12); },
+    click() { playTone(800, 'triangle', 0.05, 0.08); },
+    chime() {
+      playTone(659.25, 'sine', 0.25, 0.1); // E5
+      setTimeout(() => playTone(880, 'sine', 0.35, 0.12), 80); // A5
+    },
+    success() {
+      playTone(523.25, 'sine', 0.2, 0.12); // C5
+      setTimeout(() => playTone(659.25, 'sine', 0.2, 0.12), 90); // E5
+      setTimeout(() => playTone(783.99, 'sine', 0.2, 0.14), 180); // G5
+      setTimeout(() => playTone(1046.5, 'triangle', 0.45, 0.18), 270); // C6
+    },
+    softError() {
+      playTone(280, 'sine', 0.18, 0.09);
+      setTimeout(() => playTone(240, 'sine', 0.22, 0.07), 100);
+    },
+    swoosh() { playTone(350, 'triangle', 0.15, 0.08); },
+    drop() { playTone(440, 'sine', 0.12, 0.12); },
+    fanfare() {
+      [523.25, 659.25, 783.99, 1046.50, 1318.51].forEach((f, i) => {
+        setTimeout(() => playTone(f, 'sine', 0.3, 0.14), i * 90);
+      });
+    }
+  };
+})();
+
+// Procedural High-Quality Vector Art for Aprincar Games
+window.AprincarVectorArt = (() => {
+  return {
+    // Draw an expressive Animal face / body into a Phaser Graphics or Container
+    drawAnimal(graphics, type, x, y, size = 64) {
+      graphics.save();
+      const s = size / 64;
+      
+      if (type === 'lion' || type === 'leao') {
+        // Juba
+        graphics.fillStyle(0xd97706, 1);
+        graphics.fillCircle(x, y, 32 * s);
+        // Cabeça
+        graphics.fillStyle(0xfbbf24, 1);
+        graphics.fillCircle(x, y, 22 * s);
+        // Orelhas
+        graphics.fillStyle(0xd97706, 1);
+        graphics.fillCircle(x - 18 * s, y - 18 * s, 8 * s);
+        graphics.fillCircle(x + 18 * s, y - 18 * s, 8 * s);
+        graphics.fillStyle(0xfef3c7, 1);
+        graphics.fillCircle(x - 18 * s, y - 18 * s, 4 * s);
+        graphics.fillCircle(x + 18 * s, y - 18 * s, 4 * s);
+        // Focinho
+        graphics.fillStyle(0xfef3c7, 1);
+        graphics.fillEllipse(x, y + 6 * s, 14 * s, 10 * s);
+        graphics.fillStyle(0x78350f, 1);
+        graphics.fillTriangle(x - 4 * s, y + 2 * s, x + 4 * s, y + 2 * s, x, y + 6 * s);
+        // Olhos
+        graphics.fillStyle(0x1e293b, 1);
+        graphics.fillCircle(x - 8 * s, y - 3 * s, 3.5 * s);
+        graphics.fillCircle(x + 8 * s, y - 3 * s, 3.5 * s);
+        graphics.fillStyle(0xffffff, 1);
+        graphics.fillCircle(x - 7 * s, y - 4 * s, 1.2 * s);
+        graphics.fillCircle(x + 9 * s, y - 4 * s, 1.2 * s);
+        // Bigodes
+        graphics.lineStyle(1.5 * s, 0x78350f, 0.7);
+        graphics.lineBetween(x - 8 * s, y + 6 * s, x - 18 * s, y + 4 * s);
+        graphics.lineBetween(x + 8 * s, y + 6 * s, x + 18 * s, y + 4 * s);
+      } else if (type === 'elephant' || type === 'elefante') {
+        // Orelhas
+        graphics.fillStyle(0x94a3b8, 1);
+        graphics.fillEllipse(x - 22 * s, y - 4 * s, 18 * s, 26 * s);
+        graphics.fillEllipse(x + 22 * s, y - 4 * s, 18 * s, 26 * s);
+        graphics.fillStyle(0xfbcfe8, 0.7);
+        graphics.fillEllipse(x - 22 * s, y - 4 * s, 10 * s, 16 * s);
+        graphics.fillEllipse(x + 22 * s, y - 4 * s, 10 * s, 16 * s);
+        // Cabeça
+        graphics.fillStyle(0x64748b, 1);
+        graphics.fillCircle(x, y, 22 * s);
+        // Tromba
+        graphics.fillStyle(0x64748b, 1);
+        graphics.fillRoundedRect(x - 6 * s, y + 4 * s, 12 * s, 24 * s, 6 * s);
+        // Presas
+        graphics.fillStyle(0xffffff, 1);
+        graphics.fillTriangle(x - 8 * s, y + 10 * s, x - 12 * s, y + 16 * s, x - 6 * s, y + 14 * s);
+        graphics.fillTriangle(x + 8 * s, y + 10 * s, x + 12 * s, y + 16 * s, x + 6 * s, y + 14 * s);
+        // Olhos
+        graphics.fillStyle(0x0f172a, 1);
+        graphics.fillCircle(x - 9 * s, y - 4 * s, 3.5 * s);
+        graphics.fillCircle(x + 9 * s, y - 4 * s, 3.5 * s);
+        graphics.fillStyle(0xffffff, 1);
+        graphics.fillCircle(x - 8 * s, y - 5 * s, 1.2 * s);
+        graphics.fillCircle(x + 10 * s, y - 5 * s, 1.2 * s);
+      } else if (type === 'monkey' || type === 'macaco') {
+        // Orelhas
+        graphics.fillStyle(0x854d0e, 1);
+        graphics.fillCircle(x - 22 * s, y - 2 * s, 10 * s);
+        graphics.fillCircle(x + 22 * s, y - 2 * s, 10 * s);
+        graphics.fillStyle(0xfde047, 0.8);
+        graphics.fillCircle(x - 22 * s, y - 2 * s, 6 * s);
+        graphics.fillCircle(x + 22 * s, y - 2 * s, 6 * s);
+        // Cabeça
+        graphics.fillStyle(0x713f12, 1);
+        graphics.fillCircle(x, y, 22 * s);
+        // Rosto
+        graphics.fillStyle(0xfef08a, 1);
+        graphics.fillEllipse(x - 7 * s, y - 4 * s, 10 * s, 12 * s);
+        graphics.fillEllipse(x + 7 * s, y - 4 * s, 10 * s, 12 * s);
+        graphics.fillEllipse(x, y + 8 * s, 16 * s, 11 * s);
+        // Focinho & Boca
+        graphics.fillStyle(0x713f12, 1);
+        graphics.fillCircle(x - 3 * s, y + 4 * s, 1.5 * s);
+        graphics.fillCircle(x + 3 * s, y + 4 * s, 1.5 * s);
+        graphics.lineStyle(1.8 * s, 0x713f12, 1);
+        graphics.beginPath();
+        graphics.arc(x, y + 7 * s, 5 * s, 0.2, Math.PI - 0.2);
+        graphics.strokePath();
+        // Olhos
+        graphics.fillStyle(0x1e293b, 1);
+        graphics.fillCircle(x - 6 * s, y - 4 * s, 3.5 * s);
+        graphics.fillCircle(x + 6 * s, y - 4 * s, 3.5 * s);
+      } else if (type === 'giraffe' || type === 'girafa') {
+        // Chifres (ossicones)
+        graphics.fillStyle(0xca8a04, 1);
+        graphics.fillRect(x - 8 * s, y - 28 * s, 3 * s, 10 * s);
+        graphics.fillRect(x + 5 * s, y - 28 * s, 3 * s, 10 * s);
+        graphics.fillStyle(0xa16207, 1);
+        graphics.fillCircle(x - 6.5 * s, y - 28 * s, 4 * s);
+        graphics.fillCircle(x + 6.5 * s, y - 28 * s, 4 * s);
+        // Orelhas
+        graphics.fillStyle(0xfacc15, 1);
+        graphics.fillEllipse(x - 20 * s, y - 14 * s, 12 * s, 6 * s);
+        graphics.fillEllipse(x + 20 * s, y - 14 * s, 12 * s, 6 * s);
+        // Cabeça
+        graphics.fillStyle(0xfacc15, 1);
+        graphics.fillRoundedRect(x - 16 * s, y - 18 * s, 32 * s, 36 * s, 14 * s);
+        // Manchas
+        graphics.fillStyle(0xa16207, 0.9);
+        graphics.fillCircle(x - 8 * s, y - 10 * s, 5 * s);
+        graphics.fillCircle(x + 8 * s, y - 8 * s, 4 * s);
+        // Focinho
+        graphics.fillStyle(0xfef08a, 1);
+        graphics.fillEllipse(x, y + 10 * s, 16 * s, 10 * s);
+        graphics.fillStyle(0x713f12, 1);
+        graphics.fillCircle(x - 4 * s, y + 9 * s, 1.8 * s);
+        graphics.fillCircle(x + 4 * s, y + 9 * s, 1.8 * s);
+        // Olhos
+        graphics.fillStyle(0x1e293b, 1);
+        graphics.fillCircle(x - 8 * s, y - 2 * s, 3.5 * s);
+        graphics.fillCircle(x + 8 * s, y - 2 * s, 3.5 * s);
+      } else if (type === 'panda') {
+        // Orelhas
+        graphics.fillStyle(0x0f172a, 1);
+        graphics.fillCircle(x - 18 * s, y - 16 * s, 9 * s);
+        graphics.fillCircle(x + 18 * s, y - 16 * s, 9 * s);
+        // Cabeça
+        graphics.fillStyle(0xffffff, 1);
+        graphics.fillCircle(x, y, 22 * s);
+        graphics.lineStyle(1.5 * s, 0xe2e8f0);
+        graphics.strokeCircle(x, y, 22 * s);
+        // Manchas dos olhos
+        graphics.fillStyle(0x0f172a, 1);
+        graphics.fillEllipse(x - 9 * s, y - 3 * s, 8 * s, 6 * s);
+        graphics.fillEllipse(x + 9 * s, y - 3 * s, 8 * s, 6 * s);
+        // Olhos
+        graphics.fillStyle(0xffffff, 1);
+        graphics.fillCircle(x - 8 * s, y - 3 * s, 2.5 * s);
+        graphics.fillCircle(x + 8 * s, y - 3 * s, 2.5 * s);
+        graphics.fillStyle(0x0f172a, 1);
+        graphics.fillCircle(x - 8 * s, y - 3 * s, 1.2 * s);
+        graphics.fillCircle(x + 8 * s, y - 3 * s, 1.2 * s);
+        // Focinho
+        graphics.fillStyle(0x0f172a, 1);
+        graphics.fillEllipse(x, y + 8 * s, 5 * s, 3.5 * s);
+      } else {
+        // Default Cute Puppy / Bear
+        graphics.fillStyle(0xfb923c, 1);
+        graphics.fillCircle(x - 16 * s, y - 14 * s, 8 * s);
+        graphics.fillCircle(x + 16 * s, y - 14 * s, 8 * s);
+        graphics.fillStyle(0xf97316, 1);
+        graphics.fillCircle(x, y, 22 * s);
+        graphics.fillStyle(0xffedd5, 1);
+        graphics.fillEllipse(x, y + 6 * s, 14 * s, 10 * s);
+        graphics.fillStyle(0x431407, 1);
+        graphics.fillCircle(x - 8 * s, y - 4 * s, 3.5 * s);
+        graphics.fillCircle(x + 8 * s, y - 4 * s, 3.5 * s);
+        graphics.fillCircle(x, y + 4 * s, 3 * s);
+      }
+      graphics.restore();
+    },
+
+    // Draw Realistic Tasty Fruits
+    drawFruit(graphics, type, x, y, size = 56) {
+      graphics.save();
+      const s = size / 56;
+
+      if (type === 'apple' || type === 'maca') {
+        // Maçã Vermelha
+        graphics.fillStyle(0x15803d, 1);
+        graphics.fillEllipse(x + 6 * s, y - 22 * s, 8 * s, 5 * s); // Folha
+        graphics.fillStyle(0x78350f, 1);
+        graphics.fillRect(x - 1.5 * s, y - 24 * s, 3 * s, 8 * s); // Cabinho
+        graphics.fillStyle(0xef4444, 1);
+        graphics.fillCircle(x - 8 * s, y - 2 * s, 16 * s);
+        graphics.fillCircle(x + 8 * s, y - 2 * s, 16 * s);
+        graphics.fillCircle(x, y + 6 * s, 15 * s);
+        // Brilho
+        graphics.fillStyle(0xffffff, 0.45);
+        graphics.fillEllipse(x - 10 * s, y - 8 * s, 5 * s, 8 * s);
+      } else if (type === 'banana') {
+        // Banana Amarela
+        graphics.lineStyle(16 * s, 0xfacc15, 1);
+        graphics.beginPath();
+        graphics.arc(x + 10 * s, y - 10 * s, 26 * s, 1.2, 2.7);
+        graphics.strokePath();
+        graphics.fillStyle(0x713f12, 1);
+        graphics.fillCircle(x - 14 * s, y + 12 * s, 3 * s); // Ponta
+        graphics.fillCircle(x + 22 * s, y - 16 * s, 4 * s); // Topo
+      } else if (type === 'orange' || type === 'laranja') {
+        // Laranja
+        graphics.fillStyle(0x16a34a, 1);
+        graphics.fillEllipse(x + 5 * s, y - 20 * s, 9 * s, 5 * s); // Folha
+        graphics.fillStyle(0x78350f, 1);
+        graphics.fillRect(x - 1.5 * s, y - 20 * s, 3 * s, 6 * s); // Cabinho
+        graphics.fillStyle(0xf97316, 1);
+        graphics.fillCircle(x, y, 20 * s);
+        graphics.fillStyle(0xfbbf24, 0.4);
+        graphics.fillCircle(x - 6 * s, y - 6 * s, 8 * s);
+      } else if (type === 'strawberry' || type === 'morango') {
+        // Morango
+        graphics.fillStyle(0xdc2626, 1);
+        graphics.fillTriangle(x - 16 * s, y - 10 * s, x + 16 * s, y - 10 * s, x, y + 20 * s);
+        graphics.fillCircle(x, y - 6 * s, 16 * s);
+        // Folhas verdes no topo
+        graphics.fillStyle(0x16a34a, 1);
+        graphics.fillTriangle(x - 12 * s, y - 16 * s, x - 4 * s, y - 8 * s, x, y - 20 * s);
+        graphics.fillTriangle(x + 12 * s, y - 16 * s, x + 4 * s, y - 8 * s, x, y - 20 * s);
+        // Sementinhas douradas
+        graphics.fillStyle(0xfef08a, 0.9);
+        graphics.fillCircle(x - 6 * s, y - 2 * s, 1.2 * s);
+        graphics.fillCircle(x + 6 * s, y - 2 * s, 1.2 * s);
+        graphics.fillCircle(x, y + 5 * s, 1.2 * s);
+        graphics.fillCircle(x - 5 * s, y + 8 * s, 1.2 * s);
+        graphics.fillCircle(x + 5 * s, y + 8 * s, 1.2 * s);
+      } else {
+        // Uva
+        graphics.fillStyle(0x8b5cf6, 1);
+        graphics.fillCircle(x - 7 * s, y - 6 * s, 8 * s);
+        graphics.fillCircle(x + 7 * s, y - 6 * s, 8 * s);
+        graphics.fillCircle(x, y + 4 * s, 8 * s);
+      }
+      graphics.restore();
+    },
+
+    // Draw Isometric 3D Wooden Toy Block
+    drawIsometricBlock(graphics, x, y, width = 74, height = 64, baseColor = 0x8b5cf6) {
+      graphics.save();
+      const color = Phaser.Display.Color.IntegerToColor(baseColor);
+      const topColor = Phaser.Display.Color.GetColor(Math.min(255, color.red + 40), Math.min(255, color.green + 40), Math.min(255, color.blue + 40));
+      const shadowColor = Phaser.Display.Color.GetColor(Math.max(0, color.red - 45), Math.max(0, color.green - 45), Math.max(0, color.blue - 45));
+
+      // Sombra projetada no chão
+      graphics.fillStyle(0x000000, 0.12);
+      graphics.fillRoundedRect(x - width / 2 + 4, y + height / 2 - 2, width, 14, 7);
+
+      // Face Frontal Principal
+      graphics.fillStyle(baseColor, 1);
+      graphics.fillRoundedRect(x - width / 2, y - height / 2, width, height, 10);
+      graphics.lineStyle(2.5, shadowColor, 0.8);
+      graphics.strokeRoundedRect(x - width / 2, y - height / 2, width, height, 10);
+
+      // Chanfro Superior 3D
+      graphics.fillStyle(topColor, 0.9);
+      graphics.fillRoundedRect(x - width / 2 + 4, y - height / 2 + 3, width - 8, height * 0.35, 6);
+
+      // Encaixe / Pino central de madeira
+      graphics.fillStyle(topColor, 1);
+      graphics.fillCircle(x, y - height / 2 + 2, 10);
+      graphics.lineStyle(1.5, shadowColor, 0.6);
+      graphics.strokeCircle(x, y - height / 2 + 2, 10);
+
+      graphics.restore();
+    },
+
+    // Draw Recognizable Everyday Objects for Color Matching
+    drawColorItem(graphics, itemKey, x, y, size = 68) {
+      graphics.save();
+      const s = size / 68;
+
+      if (itemKey.includes('car') || itemKey.includes('carro')) {
+        // Carrinho de brinquedo
+        graphics.fillStyle(0xef4444, 1); // Vermelho
+        graphics.fillRoundedRect(x - 28 * s, y - 8 * s, 56 * s, 22 * s, 6 * s);
+        graphics.fillRoundedRect(x - 16 * s, y - 22 * s, 32 * s, 16 * s, 5 * s);
+        // Janela
+        graphics.fillStyle(0xe0f2fe, 1);
+        graphics.fillRoundedRect(x - 12 * s, y - 19 * s, 24 * s, 11 * s, 3 * s);
+        // Rodas
+        graphics.fillStyle(0x1e293b, 1);
+        graphics.fillCircle(x - 16 * s, y + 14 * s, 7 * s);
+        graphics.fillCircle(x + 16 * s, y + 14 * s, 7 * s);
+        graphics.fillStyle(0x94a3b8, 1);
+        graphics.fillCircle(x - 16 * s, y + 14 * s, 3 * s);
+        graphics.fillCircle(x + 16 * s, y + 14 * s, 3 * s);
+      } else if (itemKey.includes('leaf') || itemKey.includes('folha')) {
+        // Folha verde
+        graphics.fillStyle(0x22c55e, 1);
+        graphics.fillEllipse(x, y, 22 * s, 32 * s);
+        graphics.lineStyle(2 * s, 0x15803d, 1);
+        graphics.lineBetween(x, y - 26 * s, x, y + 26 * s);
+        graphics.lineBetween(x, y - 10 * s, x - 12 * s, y - 18 * s);
+        graphics.lineBetween(x, y - 2 * s, x + 12 * s, y - 10 * s);
+        graphics.lineBetween(x, y + 8 * s, x - 12 * s, y);
+      } else if (itemKey.includes('duck') || itemKey.includes('pato')) {
+        // Patinho de borracha amarelo
+        graphics.fillStyle(0xfacc15, 1);
+        graphics.fillCircle(x - 4 * s, y - 10 * s, 14 * s); // Cabeça
+        graphics.fillEllipse(x + 4 * s, y + 6 * s, 22 * s, 16 * s); // Corpo
+        // Bico
+        graphics.fillStyle(0xf97316, 1);
+        graphics.fillTriangle(x - 16 * s, y - 10 * s, x - 26 * s, y - 7 * s, x - 16 * s, y - 4 * s);
+        // Olho
+        graphics.fillStyle(0x0f172a, 1);
+        graphics.fillCircle(x - 8 * s, y - 12 * s, 2.5 * s);
+      } else if (itemKey.includes('grape') || itemKey.includes('uva')) {
+        // Cacho de Uvas Roxas
+        graphics.fillStyle(0x8b5cf6, 1);
+        [-12, 0, 12].forEach(dx => graphics.fillCircle(x + dx * s, y - 10 * s, 9 * s));
+        [-6, 6].forEach(dx => graphics.fillCircle(x + dx * s, y + 2 * s, 8.5 * s));
+        graphics.fillCircle(x, y + 14 * s, 8 * s);
+        // Folhinha
+        graphics.fillStyle(0x16a34a, 1);
+        graphics.fillEllipse(x + 4 * s, y - 22 * s, 8 * s, 4 * s);
+      } else {
+        // Barquinho Azul
+        graphics.fillStyle(0x2563eb, 1);
+        graphics.fillTriangle(x - 26 * s, y + 8 * s, x + 26 * s, y + 8 * s, x + 16 * s, y + 22 * s);
+        graphics.fillTriangle(x - 26 * s, y + 8 * s, x + 16 * s, y + 22 * s, x - 16 * s, y + 22 * s);
+        graphics.fillStyle(0xffffff, 1);
+        graphics.fillTriangle(x - 2 * s, y - 22 * s, x + 16 * s, y + 4 * s, x - 2 * s, y + 4 * s);
+        graphics.fillStyle(0x78350f, 1);
+        graphics.fillRect(x - 3 * s, y - 24 * s, 3 * s, 30 * s);
+      }
+      graphics.restore();
+    },
+
+    // Draw Steam Train Locomotive and Freight Wagons
+    drawTrainLocomotive(graphics, x, y, width = 120, height = 75) {
+      graphics.save();
+      // Cabine
+      graphics.fillStyle(0x2563eb, 1);
+      graphics.fillRoundedRect(x + 10, y - height / 2 - 10, 45, height + 10, 8);
+      // Janela da cabine
+      graphics.fillStyle(0xe0f2fe, 1);
+      graphics.fillRoundedRect(x + 20, y - height / 2, 25, 24, 4);
+      // Caldeira
+      graphics.fillStyle(0x3b82f6, 1);
+      graphics.fillRoundedRect(x - 45, y - height / 2 + 10, 60, height - 10, 8);
+      // Chaminé
+      graphics.fillStyle(0x1e293b, 1);
+      graphics.fillRoundedRect(x - 35, y - height / 2 - 18, 14, 28, 4);
+      // Farol dianteiro dourado
+      graphics.fillStyle(0xfbbf24, 1);
+      graphics.fillCircle(x - 46, y + 4, 8);
+      // Rodas
+      graphics.fillStyle(0x0f172a, 1);
+      graphics.fillCircle(x - 25, y + height / 2 + 4, 14);
+      graphics.fillCircle(x + 10, y + height / 2 + 4, 14);
+      graphics.fillCircle(x + 38, y + height / 2 + 4, 14);
+      graphics.fillStyle(0x94a3b8, 1);
+      graphics.fillCircle(x - 25, y + height / 2 + 4, 5);
+      graphics.fillCircle(x + 10, y + height / 2 + 4, 5);
+      graphics.fillCircle(x + 38, y + height / 2 + 4, 5);
+      graphics.restore();
+    },
+
+    drawTrainWagon(graphics, x, y, width = 95, height = 60, color = 0x8b5cf6) {
+      graphics.save();
+      // Corpo do vagão
+      graphics.fillStyle(color, 1);
+      graphics.fillRoundedRect(x - width / 2, y - height / 2, width, height, 8);
+      graphics.lineStyle(2, 0xffffff, 0.4);
+      graphics.strokeRoundedRect(x - width / 2, y - height / 2, width, height, 8);
+      // Engate
+      graphics.fillStyle(0x475569, 1);
+      graphics.fillRect(x - width / 2 - 8, y + 4, 10, 6);
+      graphics.fillRect(x + width / 2 - 2, y + 4, 10, 6);
+      // Rodas
+      graphics.fillStyle(0x0f172a, 1);
+      graphics.fillCircle(x - width / 3, y + height / 2 + 4, 11);
+      graphics.fillCircle(x + width / 3, y + height / 2 + 4, 11);
+      graphics.fillStyle(0x94a3b8, 1);
+      graphics.fillCircle(x - width / 3, y + height / 2 + 4, 4);
+      graphics.fillCircle(x + width / 3, y + height / 2 + 4, 4);
+      graphics.restore();
+    },
+
+    // Draw Iridescent Floating Bubble
+    drawBubble(graphics, x, y, radius = 45, color = 0x38bdf8) {
+      graphics.save();
+      // Glow exterior
+      graphics.fillStyle(color, 0.25);
+      graphics.fillCircle(x, y, radius + 3);
+      // Corpo da bolha
+      graphics.fillStyle(0xffffff, 0.35);
+      graphics.fillCircle(x, y, radius);
+      graphics.lineStyle(3, color, 0.75);
+      graphics.strokeCircle(x, y, radius);
+      // Brilho / Reflexo iridescente
+      graphics.fillStyle(0xffffff, 0.85);
+      graphics.fillEllipse(x - radius * 0.35, y - radius * 0.35, radius * 0.3, radius * 0.18);
+      graphics.restore();
+    }
+  };
+})();
+
+// Procedural Visual Feedback and Celebrations for Aprincar Games
+window.AprincarFeedback = (() => {
+  return {
+    celebrate(scene, x = 480, y = 320) {
+      // Sound
+      if (window.AprincarAudio) window.AprincarAudio.success();
+
+      // Confetti & Starburst
+      const colors = [0xfbbf24, 0xf43f5e, 0x2563eb, 0x22c55e, 0x8b5cf6, 0xfb923c];
+      for (let i = 0; i < 24; i++) {
+        const angle = (i / 24) * Math.PI * 2;
+        const speed = Phaser.Math.Between(120, 260);
+        const color = colors[i % colors.length];
+        const particle = scene.add.circle(x, y, Phaser.Math.Between(5, 9), color);
+        
+        scene.tweens.add({
+          targets: particle,
+          x: x + Math.cos(angle) * speed,
+          y: y + Math.sin(angle) * speed + Phaser.Math.Between(20, 60),
+          alpha: 0,
+          scale: 0.2,
+          duration: Phaser.Math.Between(600, 900),
+          ease: 'Cubic.easeOut',
+          onComplete: () => particle.destroy()
+        });
+      }
+
+      // Golden Expanding Ring
+      const ring = scene.add.graphics();
+      ring.lineStyle(6, 0xfbbf24, 0.9);
+      ring.strokeCircle(x, y, 20);
+      scene.tweens.add({
+        targets: ring,
+        scale: 4.5,
+        alpha: 0,
+        duration: 650,
+        ease: 'Quad.easeOut',
+        onComplete: () => ring.destroy()
+      });
+    },
+
+    softErrorFeedback(scene, object) {
+      if (window.AprincarAudio) window.AprincarAudio.softError();
+      if (!object) return;
+
+      const origX = object.x;
+      scene.tweens.add({
+        targets: object,
+        x: origX + 12,
+        duration: 60,
+        yoyo: true,
+        repeat: 3,
+        ease: 'Sine.easeInOut',
+        onComplete: () => { object.x = origX; }
+      });
+    },
+
+    showAssistanceHint(scene, target) {
+      if (!target) return;
+      const hint = scene.add.graphics();
+      hint.lineStyle(4, 0xfbbf24, 0.85);
+      hint.strokeRoundedRect(target.x - target.w / 2 - 6, target.y - target.h / 2 - 6, target.w + 12, target.h + 12, 12);
+      
+      scene.tweens.add({
+        targets: hint,
+        alpha: 0.2,
+        scale: 1.08,
+        duration: 500,
+        yoyo: true,
+        repeat: 4,
+        onComplete: () => hint.destroy()
+      });
+    }
+  };
+})();
+
+// TapOrDragController and Input Gestures Primitive for Aprincar Games
+(() => {
+  class TapOrDragController {
+    /**
+     * @param {Phaser.Scene} scene
+     * @param {Phaser.GameObjects.GameObject} gameObject
+     * @param {Object} options
+     * @param {number} [options.threshold=10]
+     * @param {Function} [options.onTap]
+     * @param {Function} [options.onDragStart]
+     * @param {Function} [options.onDrag]
+     * @param {Function} [options.onDragEnd]
+     */
+    constructor(scene, gameObject, options = {}) {
+      this.scene = scene;
+      this.gameObject = gameObject;
+      this.threshold = options.threshold ?? 10;
+      this.onTap = options.onTap;
+      this.onDragStart = options.onDragStart;
+      this.onDrag = options.onDrag;
+      this.onDragEnd = options.onDragEnd;
+
+      this.downX = 0;
+      this.downY = 0;
+      this.isDragging = false;
+      this.isDown = false;
+
+      this.setup();
+    }
+
+    setup() {
+      this.gameObject.setInteractive({ draggable: true, useHandCursor: true });
+      this.scene.input.setDraggable(this.gameObject);
+
+      this.gameObject.on('pointerdown', (pointer) => {
+        this.downX = pointer.x;
+        this.downY = pointer.y;
+        this.isDragging = false;
+        this.isDown = true;
+      });
+
+      this.gameObject.on('dragstart', (pointer) => {
+        const dist = Phaser.Math.Distance.Between(this.downX, this.downY, pointer.x, pointer.y);
+        if (dist >= this.threshold) {
+          this.isDragging = true;
+          if (this.onDragStart) this.onDragStart(pointer, this.gameObject);
+        }
+      });
+
+      this.gameObject.on('drag', (pointer, dragX, dragY) => {
+        const dist = Phaser.Math.Distance.Between(this.downX, this.downY, pointer.x, pointer.y);
+        if (!this.isDragging && dist >= this.threshold) {
+          this.isDragging = true;
+          if (this.onDragStart) this.onDragStart(pointer, this.gameObject);
+        }
+        if (this.isDragging && this.onDrag) {
+          this.onDrag(pointer, this.gameObject, dragX, dragY);
+        }
+      });
+
+      this.gameObject.on('dragend', (pointer) => {
+        if (this.isDragging) {
+          if (this.onDragEnd) this.onDragEnd(pointer, this.gameObject);
+        }
+      });
+
+      this.gameObject.on('pointerup', (pointer) => {
+        const dist = Phaser.Math.Distance.Between(this.downX, this.downY, pointer.x, pointer.y);
+        if (!this.isDragging && dist < this.threshold) {
+          if (this.onTap) this.onTap(pointer, this.gameObject);
+        }
+        this.isDown = false;
+        this.isDragging = false;
+      });
+    }
+
+    destroy() {
+      this.gameObject.off('pointerdown');
+      this.gameObject.off('dragstart');
+      this.gameObject.off('drag');
+      this.gameObject.off('dragend');
+      this.gameObject.off('pointerup');
+    }
+  }
+
+  window.AprincarInputGestures = {
+    TapOrDragController,
+    attachTapOrDrag(scene, gameObject, options) {
+      return new TapOrDragController(scene, gameObject, options);
+    }
+  };
+})();
+
+// Standardized Phaser Game Configuration Factory for Aprincar
+window.createAprincarPhaserConfig = function createAprincarPhaserConfig(sceneClass, options = {}) {
+  return {
+    type: Phaser.AUTO,
+    parent: 'game',
+    backgroundColor: options.backgroundColor || '#f7f6f2',
+    scale: {
+      mode: Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+      width: 960,
+      height: 640
+    },
+    input: {
+      activePointers: 3
+    },
+    render: {
+      antialias: true,
+      pixelArt: false,
+      roundPixels: true,
+      powerPreference: 'high-performance'
+    },
+    scene: Array.isArray(sceneClass) ? sceneClass : [sceneClass],
+    ...options
+  };
+};
+
+// Base Game Scene providing standardized infrastructure and SDK bridge
 (() => {
   const CFG = window.APRINCAR_GAME_CONFIG;
   const BRAND = window.APRINCAR_BRAND;
   const FONT = BRAND.fontFamily;
   const C = { bg: 0xf7f6f2, purple: 0x8b5cf6, blue: 0x2563eb, coral: 0xf43f5e, orange: 0xfb923c, sun: 0xfbcb24, leaf: 0x22c55e, sky: 0x38bdf8, ink: '#13203d', white: 0xffffff };
-  const COLOR_HEX = { violet: C.purple, coral: C.coral, sun: C.sun, leaf: C.leaf, sky: C.sky };
-  class AprincarScene extends Phaser.Scene {
-    constructor() { super('main'); this.level = 1; this.attempts = 0; this.locked = false; }
-    async create() {
-      this.cameras.main.setBackgroundColor(C.bg); this.add.rectangle(480, 52, 960, 104, C.white).setStrokeStyle(1, 0xe2dfd7);
-      BRAND.addPhaser(this, 22, 16);
-      this.add.text(480, 20, CFG.name, { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: C.ink }).setOrigin(.5, 0);
-      this.levelText = this.add.text(910, 28, 'Fase 1', { fontFamily: FONT, fontSize: '16px', fontStyle: 'bold', color: '#6f5bd7' }).setOrigin(1, 0);
-      this.promptText = this.add.text(480, 118, '', { fontFamily: FONT, fontSize: '28px', fontStyle: 'bold', color: C.ink, align: 'center', wordWrap: { width: 820 } }).setOrigin(.5, 0);
-      this.statusText = this.add.text(480, 570, '', { fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#5143a6' }).setOrigin(.5); this.starText = this.add.text(32, 574, '⭐ 0', { fontFamily: FONT, fontSize: '20px', fontStyle: 'bold', color: '#6f5bd7' });
-      await aprincar.session.start({ mode: CFG.mode }); this.nextRound();
+
+  class AprincarBaseScene extends Phaser.Scene {
+    constructor(sceneKey = 'main') {
+      super(sceneKey);
+      this.level = 1;
+      this.attempts = 0;
+      this.consecutiveFailures = 0;
+      this.locked = false;
+      this.stars = 0;
+      this.testTargets = [];
+      this.challenge = null;
     }
-    updateState(values = {}) { if (window.__APRINCAR_GAME_STATE__) Object.assign(window.__APRINCAR_GAME_STATE__, values); }
-    clearRound() { this.input.off('drag'); this.input.off('dragend'); this.input.off('pointerdown'); this.input.off('pointermove'); this.input.off('pointerup'); if (this.roundGroup) this.roundGroup.destroy(true); this.roundGroup = this.add.container(0, 0); this.statusText.setText(''); this.locked = false; this.attempts = 0; this.testTargets = []; this.challenge = null; }
-    nextRound() { this.clearRound(); this.levelText.setText(`Fase ${this.level}`); const seed = (Date.now() % 100000) + this.level * 97; const rng = createSeededRandom(seed); if (CFG.mode === 'counting') this.setupCounting(generateCountingChallenge({ rng, seed, level: this.level, theme: CFG.variant })); if (CFG.mode === 'color') this.setupColor(generateColorChallenge({ rng, seed, level: this.level })); if (CFG.mode === 'pattern') this.setupPattern(generatePatternChallenge({ rng, seed, level: this.level })); if (CFG.mode === 'letter') this.setupLetter(generateLetterChallenge({ rng, seed, level: this.level })); if (CFG.mode === 'memory') this.setupMemory(generateMemoryChallenge({ rng, seed, level: this.level })); if (CFG.mode === 'handwriting') { const c = generateLetterChallenge({ rng, seed, level: this.level }); if (Array.isArray(CFG.answers) && CFG.answers.length) c.answer = CFG.answers[(this.level - 1) % CFG.answers.length]; else if (CFG.answer) c.answer = CFG.answer; this.setupHandwriting(c); } if (CFG.mode === 'paint') this.setupPaint(); window.__APRINCAR_GAME_STATE__ = { mode: CFG.mode, variant: CFG.variant, level: this.level, challenge: this.challenge ?? null, targets: this.testTargets ?? [], inputReady: true }; }
-    target(value, x, y, w, h, kind) { this.testTargets.push({ value, x, y, w, h, kind }); }
-    addCardButton(x, y, w, h, label, value, color = C.white, kind = 'action') { const box = this.add.rectangle(x, y, w, h, color).setStrokeStyle(2, 0xe2dfd7).setInteractive({ useHandCursor: true }); const text = this.add.text(x, y, label, { fontFamily: FONT, fontSize: `${Math.min(34, h * .42)}px`, fontStyle: 'bold', color: color === C.white ? C.ink : '#ffffff' }).setOrigin(.5); this.roundGroup.add([box, text]); this.target(kind === 'action' ? label : value, x, y, w, h, kind); box.on('pointerup', () => this.choose(value, box)); return box; }
-    setupCounting(c) { this.challenge = c; this.selected = 0; if (CFG.variant === 'animals') { this.promptText.setText('Conte os bichos e escolha a quantidade correta'); const cols = Math.min(5, Math.ceil(Math.sqrt(c.items.length))); const rows = Math.ceil(c.items.length / cols); c.items.forEach((_, i) => { const x = 480 - (cols - 1) * 92 / 2 + (i % cols) * 92, y = 240 + Math.floor(i / cols) * 86; this.roundGroup.add(this.add.ellipse(x, y, 58, 44, C.leaf)); }); const optY = rows > 1 ? 485 : 430; c.options.forEach((n, i) => this.addCardButton(390 + (i - (c.options.length - 1) / 2) * 115, optY, 90, 66, String(n), n, C.white, 'choice')); } else if (CFG.variant === 'fruit') { this.promptText.setText(`Coloque ${c.answer} frutas na cesta`); this.counter = this.add.text(480, 450, '0', { fontFamily: FONT, fontSize: '44px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(.5); this.roundGroup.add(this.add.rectangle(480, 450, 270, 110, 0xc98749).setStrokeStyle(5, 0x8f5b2c)); this.roundGroup.add(this.counter); const count = Math.min(10, c.answer + 3); for (let i = 0; i < count; i++) { const x = 210 + (i % 5) * 135, y = 225 + Math.floor(i / 5) * 100, fruit = this.add.circle(x, y, 28, i % 2 ? C.coral : C.sun).setInteractive({ useHandCursor: true }); this.roundGroup.add(fruit); this.target(`fruit-${i + 1}`, x, y, 56, 56, 'toggle'); fruit.on('pointerup', () => this.togglePick(fruit, x, y)); } const check = this.addCardButton(480, 535, 190, 58, 'Conferir', '__check__'); check.removeAllListeners('pointerup'); check.on('pointerup', () => this.submitResult(this.selected === c.answer, { selected: this.selected, target: c.answer })); } else { this.promptText.setText(`Monte uma torre com ${c.answer} blocos`); for (let i = 0; i < 10; i++) { const x = 170 + (i % 5) * 145, y = 220 + Math.floor(i / 5) * 90, block = this.add.rectangle(x, y, 72, 62, [C.purple, C.coral, C.sun, C.leaf, C.sky][i % 5]).setInteractive({ useHandCursor: true }); this.roundGroup.add(block); this.target(`block-${i + 1}`, x, y, 72, 62, 'toggle'); block.on('pointerup', () => this.togglePick(block, x, y)); } const check = this.addCardButton(780, 500, 150, 58, 'Conferir', '__check__'); check.removeAllListeners('pointerup'); check.on('pointerup', () => this.submitResult(this.selected === c.answer, { selected: this.selected, target: c.answer })); } }
-    togglePick(object, x, y) { const picked = !object.getData('picked'); object.setData('picked', picked); this.selected += picked ? 1 : -1; this.counter?.setText(String(this.selected)); this.tweens.add({ targets: object, scale: picked ? .82 : 1, alpha: picked ? .72 : 1, duration: 240 }); this.updateState({ selectedCount: this.selected }); }
-    setupColor(c) { this.challenge = c; this.promptText.setText(`Leve a peça até a cor ${c.label}`); const piece = this.add.circle(180, 320, 54, COLOR_HEX[c.answer]).setInteractive({ draggable: true }); this.input.setDraggable(piece); this.roundGroup.add(piece); this.target('source', 180, 320, 108, 108, 'drag-source'); const slots = []; c.options.forEach((color, i) => { const x = 430 + i * 135, slot = this.add.rectangle(x, 320, 105, 115, COLOR_HEX[color], .22).setStrokeStyle(4, COLOR_HEX[color]); slot.setData('color', color); this.roundGroup.add(slot); this.target(color, x, 320, 105, 115, 'drop-zone'); slots.push(slot); }); this.input.on('drag', (p, o, x, y) => { o.x = x; o.y = y; }); this.input.on('dragend', (p, o) => { if (o !== piece) return; const hit = slots.find(s => Phaser.Geom.Intersects.CircleToRectangle(new Phaser.Geom.Circle(piece.x, piece.y, 40), s.getBounds())); const ok = !!hit && hit.getData('color') === c.answer; this.submitResult(ok, { target: c.answer, selected: hit?.getData('color') ?? null }); if (!ok) this.tweens.add({ targets: piece, x: 180, y: 320, duration: 300 }); }); }
-    setupPattern(c) { this.challenge = c; this.promptText.setText('Qual peça continua o padrão?'); const palette = [C.purple, C.coral, C.sun, C.leaf, C.sky], map = { '●': 0, '▲': 1, '■': 2, '◆': 3, '★': 4 }; c.sequence.forEach((token, i) => this.roundGroup.add(this.add.text(210 + i * 70, 280, token, { fontFamily: FONT, fontSize: '52px', color: '#6f5bd7' }).setOrigin(.5))); c.options.forEach((t, i) => this.addCardButton(360 + i * 115, 430, 90, 76, t, t, palette[map[t] ?? 0], 'choice')); }
-    setupLetter(c) { this.challenge = c; this.promptText.setText(`Encontre a letra ${c.answer}`); const positions = Phaser.Utils.Array.Shuffle([{ x: 240, y: 250 }, { x: 410, y: 230 }, { x: 580, y: 260 }, { x: 735, y: 235 }, { x: 320, y: 400 }, { x: 500, y: 410 }, { x: 680, y: 390 }]).slice(0, c.options.length); c.options.forEach((letter, i) => { const p = positions[i], circle = this.add.circle(p.x, p.y, 54, [C.purple, C.coral, C.sun, C.leaf, C.sky][i % 5]).setInteractive({ useHandCursor: true }); this.roundGroup.add([circle, this.add.text(p.x, p.y, letter, { fontFamily: FONT, fontSize: '48px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(.5)]); this.target(letter, p.x, p.y, 108, 108, 'choice'); circle.on('pointerup', () => this.choose(letter, circle)); }); }
-    setupMemory(c) { this.challenge = c; this.promptText.setText('Encontre todos os pares'); this.memoryOpen = []; this.memoryMatched = 0; this.memoryMoves = 0; const cols = c.pairs <= 6 ? 4 : 5; c.cards.forEach((card, i) => { const x = 480 - (cols - 1) * 135 / 2 + (i % cols) * 135, y = 220 + Math.floor(i / cols) * 112, box = this.add.rectangle(x, y, 115, 92, C.purple).setInteractive({ useHandCursor: true }); const text = this.add.text(x, y, '★', { fontFamily: FONT, fontSize: '40px', color: '#ffffff' }).setOrigin(.5); box.setData('card', card); box.setData('text', text); this.roundGroup.add([box, text]); this.target(card.id, x, y, 115, 92, 'memory-card'); box.on('pointerup', () => this.flipMemory(box)); }); }
-    flipMemory(box) { if (this.locked || box.getData('matched') || box.getData('open')) return; const card = box.getData('card'), text = box.getData('text'); box.setData('open', true); text.setText(card.value); this.memoryOpen.push(box); if (this.memoryOpen.length !== 2) return; this.memoryMoves++; this.locked = true; this.updateState({ inputReady: false }); const [a, b] = this.memoryOpen, same = a.getData('card').pairId === b.getData('card').pairId; this.time.delayedCall(480, async () => { if (same) { a.setData('matched', true); b.setData('matched', true); this.memoryMatched++; this.updateState({ matchedPairs: this.memoryMatched, moves: this.memoryMoves }); if (this.memoryMatched === this.challenge.pairs) { this.locked = false; await this.submitResult(true, { moves: this.memoryMoves, pairs: this.challenge.pairs }); } } else { for (const x of [a, b]) { x.setData('open', false); x.getData('text').setText('★'); } this.updateState({ lastResult: 'failure', moves: this.memoryMoves }); await this.recordEvidence(false, { memoryMismatch: true }); } this.memoryOpen = []; this.locked = false; this.updateState({ inputReady: true }); }); }
-    setupHandwriting(c) { this.challenge = c; this.promptText.setText(`Desenhe a letra ${c.answer}`); const guideAlpha = Math.max(0.08, 0.34 - (this.level - 1) * 0.045); const guide = this.add.text(235, 330, c.answer, { fontFamily: FONT, fontSize: '250px', fontStyle: 'bold', color: '#8b5cf6' }).setOrigin(.5).setAlpha(guideAlpha); const zone = this.add.rectangle(590, 335, 470, 350, C.white).setStrokeStyle(4, 0xded5ff).setInteractive(); this.handwritingGraphics = this.add.graphics().lineStyle(10, C.blue, .88); this.roundGroup.add([guide, zone, this.handwritingGraphics]); this.strokes = []; let current, previous; zone.on('pointerdown', p => { current = []; previous = { x: p.x, y: p.y }; this.strokes.push(current); current.push(this.normPoint(p, zone)); }); zone.on('pointermove', p => { if (!p.isDown || !current || !previous) return; const point = this.normPoint(p, zone); if (current.length < 220) current.push(point); this.handwritingGraphics.lineBetween(previous.x, previous.y, p.x, p.y); previous = { x: p.x, y: p.y }; }); this.input.on('pointerup', () => { current = null; previous = null; this.updateState({ strokeCount: this.strokes.length }); }); const check = this.addCardButton(790, 535, 170, 58, 'Conferir', '__check__'); check.removeAllListeners('pointerup'); check.on('pointerup', async () => { const result = await aprincar.capability.request('handwriting.evaluate', { symbol: c.answer, strokes: this.strokes }); await this.submitResult(!!result?.recognized, { handwriting: result, symbol: c.answer, guideAlpha }); }); }
-    normPoint(p, zone) { const b = zone.getBounds(); return { x: (p.x - b.left) / b.width, y: (p.y - b.top) / b.height, t: Date.now() }; }
-    setupPaint() { this.promptText.setText('Crie do seu jeito — não existe resposta errada'); const canvas = this.add.rectangle(500, 335, 690, 390, C.white).setStrokeStyle(3, 0xe2dfd7).setInteractive(); this.paintGraphics = this.add.graphics().lineStyle(12, C.blue, .9); this.roundGroup.add([canvas, this.paintGraphics]); this.paintStrokes = []; let current = null, previous = null; canvas.on('pointerdown', p => { current = []; previous = { x: p.x, y: p.y }; this.paintStrokes.push(current); current.push(this.normPoint(p, canvas)); this.updateState({ paintStrokeCount: this.paintStrokes.length }); }); canvas.on('pointermove', p => { if (!p.isDown || !current || !previous) return; const totalPoints = this.paintStrokes.reduce((sum, stroke) => sum + stroke.length, 0); if (totalPoints < 400) current.push(this.normPoint(p, canvas)); this.paintGraphics.lineBetween(previous.x, previous.y, p.x, p.y); previous = { x: p.x, y: p.y }; }); this.input.on('pointerup', () => { current = null; previous = null; }); const save = this.addCardButton(800, 540, 180, 56, 'Guardar desenho', 'Guardar desenho'); save.removeAllListeners('pointerup'); save.on('pointerup', async () => { await aprincar.storage.set('paint:last', { strokes: this.paintStrokes, savedAt: new Date().toISOString() }); this.attempts++; await aprincar.evidence.submit({ skillId: CFG.skillId, result: 'observed', independent: true, assistance: 'none', difficulty: .2, confidence: .85, attempts: this.attempts, metadata: { level: this.level, creative: true, strokeCount: this.paintStrokes.length } }); this.statusText.setText('Desenho guardado ✨'); this.updateState({ paintSaved: true, lastResult: 'observed' }); }); }
-    choose(value, source) { if (this.locked) return; this.submitResult(value === this.challenge.answer, { selected: value, target: this.challenge.answer, sourceX: source?.x }); }
-    async recordEvidence(ok, metadata = {}) { this.attempts++; return aprincar.evidence.submit({ skillId: CFG.skillId, result: ok ? 'success' : 'failure', independent: true, assistance: 'none', difficulty: this.challenge?.difficulty ?? .35, confidence: ok ? .92 : .8, attempts: this.attempts, metadata: { level: this.level, ...metadata } }); }
-    async submitResult(ok, metadata = {}) { if (this.locked) return; this.locked = true; this.updateState({ lastResult: ok ? 'success' : 'failure', inputReady: false }); await this.recordEvidence(ok, metadata); if (ok) { await aprincar.rewards.request({ reason: `${CFG.mode}-round`, amount: 2 }); this.time.delayedCall(900, () => { this.level++; this.nextRound(); }); } else { this.locked = false; this.updateState({ inputReady: true }); } }
+
+    async create() {
+      this.cameras.main.setBackgroundColor(C.bg);
+      
+      // Header decorativo
+      this.add.rectangle(480, 50, 960, 100, C.white).setStrokeStyle(1, 0xe2dfd7);
+      BRAND.addPhaser(this, 22, 16);
+      this.titleText = this.add.text(480, 18, CFG.name, { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: C.ink }).setOrigin(0.5, 0);
+      this.levelText = this.add.text(910, 26, 'Fase 1', { fontFamily: FONT, fontSize: '18px', fontStyle: 'bold', color: '#6f5bd7' }).setOrigin(1, 0);
+      
+      // Instrução principal
+      this.promptText = this.add.text(480, 114, '', { fontFamily: FONT, fontSize: '28px', fontStyle: 'bold', color: C.ink, align: 'center', wordWrap: { width: 840 } }).setOrigin(0.5, 0);
+      
+      // Rodapé
+      this.statusText = this.add.text(480, 580, '', { fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#5143a6' }).setOrigin(0.5);
+      this.starText = this.add.text(32, 574, '⭐ 0', { fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#6f5bd7' });
+
+      await aprincar.session.start({ mode: CFG.mode });
+      this.nextRound();
+    }
+
+    updateState(values = {}) {
+      if (!window.__APRINCAR_GAME_STATE__) window.__APRINCAR_GAME_STATE__ = {};
+      Object.assign(window.__APRINCAR_GAME_STATE__, values);
+    }
+
+    clearRound() {
+      this.input.off('drag');
+      this.input.off('dragend');
+      this.input.off('pointerdown');
+      this.input.off('pointermove');
+      this.input.off('pointerup');
+      if (this.roundGroup) this.roundGroup.destroy(true);
+      this.roundGroup = this.add.container(0, 0);
+      this.statusText.setText('');
+      this.locked = false;
+      this.testTargets = [];
+      this.challenge = null;
+    }
+
+    target(value, x, y, w, h, kind) {
+      this.testTargets.push({ value, x, y, w, h, kind });
+    }
+
+    addCardButton(x, y, w, h, label, value, color = C.white, kind = 'action') {
+      const box = this.add.rectangle(x, y, w, h, color).setStrokeStyle(2, 0xe2dfd7).setInteractive({ useHandCursor: true });
+      const text = this.add.text(x, y, label, { fontFamily: FONT, fontSize: `${Math.min(34, h * 0.44)}px`, fontStyle: 'bold', color: color === C.white ? C.ink : '#ffffff' }).setOrigin(0.5);
+      this.roundGroup.add([box, text]);
+      this.target(kind === 'action' ? label : value, x, y, w, h, kind);
+      box.on('pointerup', () => this.choose(value, box));
+      return box;
+    }
+
+    choose(value, source) {
+      if (this.locked) return;
+      this.submitResult(value === this.challenge.answer, { selected: value, target: this.challenge.answer, sourceX: source?.x });
+    }
+
+    async recordEvidence(ok, metadata = {}) {
+      this.attempts++;
+      const assistanceLevel = this.consecutiveFailures >= 2 ? 'visual-cue' : 'none';
+      return aprincar.evidence.submit({
+        skillId: CFG.skillId,
+        result: ok ? 'success' : 'failure',
+        independent: this.consecutiveFailures === 0,
+        assistance: assistanceLevel,
+        difficulty: this.challenge?.difficulty ?? 0.35,
+        confidence: ok ? 0.95 : 0.8,
+        attempts: this.attempts,
+        metadata: { level: this.level, ...metadata }
+      });
+    }
+
+    async submitResult(ok, metadata = {}) {
+      if (this.locked) return;
+      this.locked = true;
+      this.updateState({ lastResult: ok ? 'success' : 'failure', inputReady: false });
+      await this.recordEvidence(ok, metadata);
+
+      if (ok) {
+        this.consecutiveFailures = 0;
+        this.stars += 2;
+        this.starText.setText(`⭐ ${this.stars}`);
+        if (window.AprincarFeedback) window.AprincarFeedback.celebrate(this, 480, 320);
+        await aprincar.rewards.request({ reason: `${CFG.mode}-round`, amount: 2 });
+        this.time.delayedCall(800, () => {
+          this.level++;
+          this.nextRound();
+        });
+      } else {
+        this.consecutiveFailures++;
+        if (window.AprincarAudio) window.AprincarAudio.softError();
+        this.locked = false;
+        this.updateState({ inputReady: true });
+        
+        // Assistência progressiva suave se errar repetidamente
+        if (this.consecutiveFailures >= 2) {
+          const correctTarget = this.testTargets.find(t => t.kind === 'choice' && t.value === this.challenge?.answer);
+          if (correctTarget && window.AprincarFeedback) {
+            window.AprincarFeedback.showAssistanceHint(this, correctTarget);
+          }
+        }
+      }
+    }
   }
-  new Phaser.Game({ type: Phaser.AUTO, width: 960, height: 640, parent: 'game', backgroundColor: '#f7f6f2', scene: [AprincarScene], scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }, input: { activePointers: 3 }, render: { antialias: true } });
+
+  window.AprincarBaseScene = AprincarBaseScene;
+  window.AprincarConstants = { C, FONT };
+})();
+
+// Pintura Livre — Estúdio de Pintura
+(() => {
+  const { C, FONT } = window.AprincarConstants;
+  const PAINT_COLORS = [C.blue, C.coral, C.leaf, C.sun, C.purple, C.orange, C.ink];
+
+  class PaintFreeScene extends window.AprincarBaseScene {
+    nextRound() {
+      this.clearRound();
+      this.levelText.setText('Estúdio Livre');
+      this.promptText.setText('Crie do seu jeito — solte a imaginação!');
+
+      this.selectedColor = C.blue;
+      this.brushSize = 12;
+
+      // Cavalete de Pintura / Canvas Central
+      const canvasGfx = this.add.graphics();
+      canvasGfx.fillStyle(0xffffff, 1);
+      canvasGfx.fillRoundedRect(140, 160, 680, 370, 16);
+      canvasGfx.lineStyle(3, 0xe2dfd7, 1);
+      canvasGfx.strokeRoundedRect(140, 160, 680, 370, 16);
+
+      const canvasZone = this.add.rectangle(480, 345, 680, 370, 0xffffff, 0.001).setInteractive();
+      this.paintGraphics = this.add.graphics();
+      this.roundGroup.add([canvasGfx, canvasZone, this.paintGraphics]);
+
+      // Paleta de Cores à Esquerda
+      PAINT_COLORS.forEach((color, i) => {
+        const y = 190 + i * 48;
+        const swatch = this.add.circle(80, y, 18, color).setInteractive({ useHandCursor: true });
+        this.roundGroup.add(swatch);
+        swatch.on('pointerup', () => {
+          this.selectedColor = color;
+          if (window.AprincarAudio) window.AprincarAudio.click();
+          this.tweens.add({ targets: swatch, scale: 1.25, duration: 100, yoyo: true });
+        });
+      });
+
+      this.paintStrokes = [];
+      let current = null;
+      let previous = null;
+
+      canvasZone.on('pointerdown', p => {
+        current = [];
+        previous = { x: p.x, y: p.y, color: this.selectedColor, size: this.brushSize };
+        this.paintStrokes.push(current);
+        current.push(this.normPoint(p, canvasZone));
+        this.updateState({ paintStrokeCount: this.paintStrokes.length });
+      });
+
+      canvasZone.on('pointermove', p => {
+        if (!p.isDown || !current || !previous) return;
+        const totalPoints = this.paintStrokes.reduce((sum, s) => sum + s.length, 0);
+        if (totalPoints < 500) current.push(this.normPoint(p, canvasZone));
+        
+        this.paintGraphics.lineStyle(previous.size, previous.color, 0.95);
+        this.paintGraphics.lineBetween(previous.x, previous.y, p.x, p.y);
+        previous.x = p.x;
+        previous.y = p.y;
+      });
+
+      this.input.on('pointerup', () => {
+        current = null;
+        previous = null;
+      });
+
+      // Botão Guardar Desenho
+      const save = this.addCardButton(800, 560, 190, 58, 'Guardar desenho', 'Guardar desenho', C.leaf, 'action');
+      save.removeAllListeners('pointerup');
+      save.on('pointerup', async () => {
+        await aprincar.storage.set('paint:last', {
+          strokes: this.paintStrokes,
+          savedAt: new Date().toISOString()
+        });
+        this.attempts++;
+        if (window.AprincarFeedback) window.AprincarFeedback.celebrate(this, 480, 320);
+        await aprincar.evidence.submit({
+          skillId: 'creativity.visual-expression',
+          result: 'observed',
+          independent: true,
+          assistance: 'none',
+          difficulty: 0.2,
+          confidence: 0.95,
+          attempts: this.attempts,
+          metadata: { level: this.level, creative: true, strokeCount: this.paintStrokes.length }
+        });
+        this.statusText.setText('Desenho guardado com carinho! ✨');
+        this.updateState({ paintSaved: true, lastResult: 'observed' });
+      });
+
+      window.__APRINCAR_GAME_STATE__ = {
+        mode: 'paint',
+        variant: 'creative',
+        level: this.level,
+        challenge: null,
+        targets: this.testTargets,
+        inputReady: true
+      };
+    }
+
+    normPoint(p, zone) {
+      const b = zone.getBounds();
+      return { x: (p.x - b.left) / b.width, y: (p.y - b.top) / b.height, t: Date.now() };
+    }
+  }
+
+  new Phaser.Game(window.createAprincarPhaserConfig(PaintFreeScene));
 })();
 </script></body></html>

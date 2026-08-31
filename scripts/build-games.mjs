@@ -7,8 +7,15 @@ const gamesDir = path.join(root, 'games');
 const challengeSource = fs.readFileSync(path.join(root, 'src/challenges/index.mjs'), 'utf8').replace(/\bexport\s+/g, '');
 const sdk = fs.readFileSync(path.join(root, 'src/runtime/sdk-bridge.js'), 'utf8');
 const brand = fs.readFileSync(path.join(root, 'src/runtime/brand.js'), 'utf8');
-const phaserRuntime = fs.readFileSync(path.join(root, 'src/runtime/phaser-runtime.js'), 'utf8');
-const threeRuntime = fs.readFileSync(path.join(root, 'src/runtime/three-runtime.js'), 'utf8');
+
+// Common infrastructure
+const audio = fs.readFileSync(path.join(root, 'src/common/audio.js'), 'utf8');
+const vectorArt = fs.readFileSync(path.join(root, 'src/common/vector-art.js'), 'utf8');
+const feedback = fs.readFileSync(path.join(root, 'src/common/feedback.js'), 'utf8');
+const inputGestures = fs.readFileSync(path.join(root, 'src/common/input-gestures.js'), 'utf8');
+const phaserConfig = fs.readFileSync(path.join(root, 'src/common/phaser-config.js'), 'utf8');
+const baseScene = fs.readFileSync(path.join(root, 'src/common/base-scene.js'), 'utf8');
+
 const phaser = fs.readFileSync(path.join(root, 'vendor/phaser.min.js'), 'utf8');
 const three = fs.readFileSync(path.join(root, 'vendor/three.bundle.min.js'), 'utf8');
 
@@ -18,9 +25,30 @@ const css = `
 for (const game of games) {
   const dir = path.join(gamesDir, game.slug);
   fs.mkdirSync(dir, { recursive: true });
-  const config = JSON.stringify({ name: game.name, mode: game.mode, variant: game.variant, answer: game.answer, answers: game.answers, skillId: game.skillId });
-  const engine = game.mode === 'three' ? `${three}\n${brand}\n${threeRuntime}` : `${phaser}\n${brand}\n${phaserRuntime}`;
+
+  const gameFile = path.join(root, `src/games/${game.slug}.js`);
+  const gameSpecificCode = fs.existsSync(gameFile) ? fs.readFileSync(gameFile, 'utf8') : '';
+
+  const config = JSON.stringify({
+    name: game.name,
+    mode: game.mode,
+    variant: game.variant,
+    answer: game.answer,
+    answers: game.answers,
+    skillId: game.skillId,
+    fantasy: game.experience.fantasy,
+    mechanic: game.experience.mechanic
+  });
+
+  let engine;
+  if (game.mode === 'three') {
+    engine = `${three}\n${brand}\n${audio}\n${gameSpecificCode}`;
+  } else {
+    engine = `${phaser}\n${brand}\n${audio}\n${vectorArt}\n${feedback}\n${inputGestures}\n${phaserConfig}\n${baseScene}\n${gameSpecificCode}`;
+  }
+
   const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>${game.name} — Aprincar</title><style>${css}</style></head><body><div id="game"></div><script>window.APRINCAR_GAME_CONFIG=${config};</script><script>${sdk}</script><script>${challengeSource}</script><script>${engine}</script></body></html>`;
+
   const manifest = {
     manifestVersion: 1,
     id: game.id,
@@ -40,11 +68,14 @@ for (const game of games) {
       interests: game.interests,
       playType: game.playType,
     },
+    experience: game.experience,
     offline: true,
     bundleMode: 'single-html',
   };
+
   fs.writeFileSync(path.join(dir, 'game.html'), html);
   fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2));
-  fs.writeFileSync(path.join(dir, 'README.md'), `# ${game.name}\n\nJogo oficial Aprincar. Fonte compartilhada em \`src/\`; este diretório contém o artefato gerado.\n`);
+  fs.writeFileSync(path.join(dir, 'README.md'), `# ${game.name}\n\nJogo oficial Aprincar. Fonte modular em \`src/games/${game.slug}.js\`; este diretório contém o artefato gerado.\n`);
 }
-console.log(`Built ${games.length} official games`);
+
+console.log(`Built ${games.length} official games (Modular Architecture)`);

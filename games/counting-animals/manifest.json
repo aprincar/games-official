@@ -35,6 +35,19 @@
     ],
     "playType": "learning"
   },
+  "experience": {
+    "fantasy": "Safari dos bichos",
+    "mechanic": "tap-count",
+    "interaction": "tap",
+    "progression": {
+      "maxLevel": 5,
+      "adaptive": true
+    },
+    "learningSignals": [
+      "accuracy",
+      "independentSuccess"
+    ]
+  },
   "offline": true,
   "bundleMode": "single-html"
 }

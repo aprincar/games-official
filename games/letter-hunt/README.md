@@ -1,3 +1,3 @@
 # Caça às Letras
 
-Jogo oficial Aprincar. Fonte compartilhada em `src/`; este diretório contém o artefato gerado.
+Jogo oficial Aprincar. Fonte modular em `src/games/letter-hunt.js`; este diretório contém o artefato gerado.

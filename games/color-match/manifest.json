@@ -35,6 +35,19 @@
     ],
     "playType": "learning"
   },
+  "experience": {
+    "fantasy": "Ateliê das cores",
+    "mechanic": "drag-match",
+    "interaction": "drag",
+    "progression": {
+      "maxLevel": 5,
+      "adaptive": true
+    },
+    "learningSignals": [
+      "classification",
+      "accuracy"
+    ]
+  },
   "offline": true,
   "bundleMode": "single-html"
 }

@@ -35,6 +35,19 @@
     ],
     "playType": "learning"
   },
+  "experience": {
+    "fantasy": "Feira da cesta",
+    "mechanic": "drag-into-basket",
+    "interaction": "drag",
+    "progression": {
+      "maxLevel": 5,
+      "adaptive": true
+    },
+    "learningSignals": [
+      "quantity",
+      "coordination"
+    ]
+  },
   "offline": true,
   "bundleMode": "single-html"
 }
