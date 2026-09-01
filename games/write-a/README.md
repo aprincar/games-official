@@ -1,3 +1,3 @@
 # Ateliê de Letras
 
-Jogo oficial Aprincar. Fonte compartilhada em `src/`; este diretório contém o artefato gerado.
+Jogo oficial Aprincar. Fonte modular em `src/games/write-a.js`; este diretório contém o artefato gerado.

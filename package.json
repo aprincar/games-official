@@ -11,7 +11,7 @@
     "validate": "node scripts/validate.mjs",
     "registry": "node scripts/build-registry.mjs",
     "check": "npm run test && npm run build && npm run syntax && npm run validate && npm run registry",
-    "syntax": "node --check src/runtime/sdk-bridge.js && node --check src/runtime/phaser-runtime.js && node --check src/runtime/three-runtime.js && node scripts/check-generated.mjs"
+    "syntax": "node --check src/runtime/sdk-bridge.js && node --check src/runtime/brand.js && node --check src/common/*.js && node --check src/games/*.js && node scripts/check-generated.mjs"
   },
   "description": "Official procedural Phaser and Three.js game extensions for Aprincar"
 }

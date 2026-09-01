@@ -1,3 +1,3 @@
 # Torre de Blocos
 
-Jogo oficial Aprincar. Fonte compartilhada em `src/`; este diretório contém o artefato gerado.
+Jogo oficial Aprincar. Fonte modular em `src/games/block-tower.js`; este diretório contém o artefato gerado.

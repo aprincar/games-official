@@ -35,6 +35,19 @@
     ],
     "playType": "practice"
   },
+  "experience": {
+    "fantasy": "Reserva dos pares",
+    "mechanic": "flip-pairs",
+    "interaction": "tap",
+    "progression": {
+      "maxLevel": 5,
+      "adaptive": true
+    },
+    "learningSignals": [
+      "workingMemory",
+      "accuracy"
+    ]
+  },
   "offline": true,
   "bundleMode": "single-html"
 }

@@ -50,6 +50,9 @@ for (const [name, dir] of directories) {
     for (const skill of [...manifest.contributes.skills, ...(manifest.contributes.secondarySkills ?? [])])
       if (!skillIds.has(skill)) errors.push(`${name}: unknown skill ${skill}`);
   }
+  const experience = manifest.experience;
+  if (!experience?.fantasy || !experience?.mechanic || !experience?.interaction || !experience?.progression?.adaptive || !Array.isArray(experience.learningSignals) || experience.learningSignals.length === 0)
+    errors.push(`${name}: experience contract incomplete`);
   if (
     /<script[^>]+src=["']https?:\/\//i.test(html) ||
     /import\s*\([^)]*https?:\/\//i.test(html)
