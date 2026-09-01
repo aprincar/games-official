@@ -1,3 +1,3 @@
 # Conte os Bichos
 
-Jogo oficial Aprincar. Fonte compartilhada em `src/`; este diretório contém o artefato gerado.
+Jogo oficial Aprincar. Fonte modular em `src/games/counting-animals.js`; este diretório contém o artefato gerado.

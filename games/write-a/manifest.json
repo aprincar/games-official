@@ -36,6 +36,19 @@
     ],
     "playType": "practice"
   },
+  "experience": {
+    "fantasy": "Escola de escrita",
+    "mechanic": "trace",
+    "interaction": "draw",
+    "progression": {
+      "maxLevel": 5,
+      "adaptive": true
+    },
+    "learningSignals": [
+      "strokeOrder",
+      "shape"
+    ]
+  },
   "offline": true,
   "bundleMode": "single-html"
 }

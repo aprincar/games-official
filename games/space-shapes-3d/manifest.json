@@ -35,6 +35,19 @@
     ],
     "playType": "learning"
   },
+  "experience": {
+    "fantasy": "Missão espacial",
+    "mechanic": "rotate-select",
+    "interaction": "rotate",
+    "progression": {
+      "maxLevel": 5,
+      "adaptive": true
+    },
+    "learningSignals": [
+      "spatialReasoning",
+      "recognition"
+    ]
+  },
   "offline": true,
   "bundleMode": "single-html"
 }

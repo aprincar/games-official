@@ -36,6 +36,19 @@
     ],
     "playType": "learning"
   },
+  "experience": {
+    "fantasy": "Trem dos padrões",
+    "mechanic": "tap-sequence",
+    "interaction": "tap",
+    "progression": {
+      "maxLevel": 5,
+      "adaptive": true
+    },
+    "learningSignals": [
+      "sequencing",
+      "prediction"
+    ]
+  },
   "offline": true,
   "bundleMode": "single-html"
 }
