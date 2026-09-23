@@ -9,6 +9,7 @@ const allowed = new Set([
   'storage', 'audio', 'haptics', 'fullscreen', 'drawing', 'handwriting',
   'camera', 'microphone', 'network', 'geolocation',
 ]);
+const sensitive = new Set(['camera', 'microphone', 'network', 'geolocation']);
 const skillIds = new Set(JSON.parse(fs.readFileSync(new URL('../schemas/skill-ids.json', import.meta.url), 'utf8')));
 const errors = [];
 const directories = fs.existsSync(root)
@@ -44,6 +45,10 @@ for (const [name, dir] of directories) {
     errors.push(`${name}: permission unsupported`);
   if (!Array.isArray(manifest.optionalPermissions) || !manifest.optionalPermissions.every((permission) => allowed.has(permission)))
     errors.push(`${name}: optional permission unsupported`);
+  if (Array.isArray(manifest.permissions) && manifest.permissions.some((permission) => sensitive.has(permission)))
+    errors.push(`${name}: sensitive permissions must be optional and explicitly granted by the Host`);
+  if (manifest.offline !== true && !(Array.isArray(manifest.optionalPermissions) && manifest.optionalPermissions.includes('network')))
+    errors.push(`${name}: non-offline games must declare network in optionalPermissions`);
   if (!Array.isArray(manifest.contributes?.skills) || manifest.contributes.skills.length === 0)
     errors.push(`${name}: skills missing`);
   else {
