@@ -51,7 +51,88 @@
     },
     "offline": {
       "type": "boolean"
+    },
+    "permissions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "storage",
+          "audio",
+          "haptics",
+          "fullscreen",
+          "drawing",
+          "handwriting"
+        ]
+      }
+    },
+    "optionalPermissions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "storage",
+          "audio",
+          "haptics",
+          "fullscreen",
+          "drawing",
+          "handwriting",
+          "camera",
+          "microphone",
+          "network",
+          "geolocation"
+        ]
+      }
+    },
+    "engines": {
+      "type": "object",
+      "required": [
+        "aprincar",
+        "sdkProtocol"
+      ],
+      "properties": {
+        "aprincar": {
+          "type": "string"
+        },
+        "sdkProtocol": {
+          "const": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "entrypoints": {
+      "type": "object",
+      "properties": {
+        "game": {
+          "type": "string",
+          "pattern": "^(?!https?://).+\\.html$"
+        }
+      },
+      "additionalProperties": true
     }
   },
-  "additionalProperties": true
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "offline": {
+            "const": false
+          }
+        },
+        "required": [
+          "offline"
+        ]
+      },
+      "then": {
+        "properties": {
+          "optionalPermissions": {
+            "contains": {
+              "const": "network"
+            }
+          }
+        }
+      }
+    }
+  ]
 }
