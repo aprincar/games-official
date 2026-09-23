@@ -31,6 +31,13 @@ const baseManifest = {
   entrypoints: { game: 'game.html' },
   permissions: [], optionalPermissions: [],
   contributes: { skills: ['math.counting.1-10'] },
+  experience: {
+    fantasy: 'Fixture de aprendizagem',
+    mechanic: 'tap-choice',
+    interaction: 'tap',
+    progression: { adaptive: true },
+    learningSignals: ['accuracy'],
+  },
   offline: true,
   bundleMode: 'single-html',
 };
