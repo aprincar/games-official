@@ -55,3 +55,22 @@ test('all ten official games expose distinct V1.1 fantasies and mechanics', () =
   assert.equal(new Set(manifests.map((manifest) => manifest.experience?.mechanic)).size, 10);
   for (const manifest of manifests) assert.ok(manifest.experience?.learningSignals?.length);
 });
+
+
+test('official validator rejects sensitive permissions as required capabilities', () => {
+  const result = runFixture(
+    { ...baseManifest, permissions: ['network'], optionalPermissions: [], offline: false },
+    '<script>1</script>',
+  );
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /sensitive permissions must be optional/i);
+  assert.match(result.stderr, /optionalPermissions/i);
+});
+
+test('official validator accepts non-offline games only with optional network declaration', () => {
+  const result = runFixture(
+    { ...baseManifest, permissions: [], optionalPermissions: ['network'], offline: false },
+    '<script>1</script>',
+  );
+  assert.equal(result.status, 0, result.stderr);
+});
