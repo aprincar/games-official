@@ -17,9 +17,19 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install exact dependencies
+        run: npm ci
+      - name: Run repository release gate
+        run: npm run check
+      - name: Audit production dependency risk
+        run: npm audit --audit-level=high
       - name: Resolve version
         id: version
         shell: bash
