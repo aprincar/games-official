@@ -66,6 +66,7 @@
       });
 
       this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+        if (this.locked) return;
         if (gameObject === hitZone) {
           pieceContainer.x = pointer.x;
           pieceContainer.y = pointer.y;
@@ -73,7 +74,7 @@
       });
 
       this.input.on('dragend', (pointer, gameObject) => {
-        if (gameObject !== hitZone) return;
+        if (gameObject !== hitZone || this.locked) return;
 
         const hit = slots.find(s => {
           const bounds = new Phaser.Geom.Rectangle(s.x - 55, s.y - 60, 110, 120);
