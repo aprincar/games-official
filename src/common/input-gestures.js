@@ -32,22 +32,24 @@
       this.gameObject.setInteractive({ draggable: true, useHandCursor: true });
       this.scene.input.setDraggable(this.gameObject);
 
-      this.gameObject.on('pointerdown', (pointer) => {
+      this.handlePointerDown = (pointer) => {
         this.downX = pointer.x;
         this.downY = pointer.y;
         this.isDragging = false;
         this.isDown = true;
-      });
+      };
 
-      this.gameObject.on('dragstart', (pointer) => {
+      this.handleDragStart = (pointer, gameObject) => {
+        if (gameObject !== this.gameObject || !this.isDown) return;
         const dist = Phaser.Math.Distance.Between(this.downX, this.downY, pointer.x, pointer.y);
         if (dist >= this.threshold) {
           this.isDragging = true;
           if (this.onDragStart) this.onDragStart(pointer, this.gameObject);
         }
-      });
+      };
 
-      this.gameObject.on('drag', (pointer, dragX, dragY) => {
+      this.handleDrag = (pointer, gameObject, dragX, dragY) => {
+        if (gameObject !== this.gameObject || !this.isDown) return;
         const dist = Phaser.Math.Distance.Between(this.downX, this.downY, pointer.x, pointer.y);
         if (!this.isDragging && dist >= this.threshold) {
           this.isDragging = true;
@@ -56,30 +58,42 @@
         if (this.isDragging && this.onDrag) {
           this.onDrag(pointer, this.gameObject, dragX, dragY);
         }
-      });
+      };
 
-      this.gameObject.on('dragend', (pointer) => {
-        if (this.isDragging) {
-          if (this.onDragEnd) this.onDragEnd(pointer, this.gameObject);
-        }
-      });
-
-      this.gameObject.on('pointerup', (pointer) => {
-        const dist = Phaser.Math.Distance.Between(this.downX, this.downY, pointer.x, pointer.y);
-        if (!this.isDragging && dist < this.threshold) {
-          if (this.onTap) this.onTap(pointer, this.gameObject);
+      this.handleDragEnd = (pointer, gameObject) => {
+        if (gameObject !== this.gameObject) return;
+        if (this.isDragging && this.onDragEnd) {
+          this.onDragEnd(pointer, this.gameObject);
         }
         this.isDown = false;
         this.isDragging = false;
-      });
+      };
+
+      this.handlePointerUp = (pointer) => {
+        const dist = Phaser.Math.Distance.Between(this.downX, this.downY, pointer.x, pointer.y);
+        const wasDragging = this.isDragging;
+        if (!wasDragging && dist < this.threshold) {
+          if (this.onTap) this.onTap(pointer, this.gameObject);
+        }
+        if (!wasDragging) {
+          this.isDown = false;
+          this.isDragging = false;
+        }
+      };
+
+      this.gameObject.on('pointerdown', this.handlePointerDown);
+      this.gameObject.on('pointerup', this.handlePointerUp);
+      this.scene.input.on('dragstart', this.handleDragStart);
+      this.scene.input.on('drag', this.handleDrag);
+      this.scene.input.on('dragend', this.handleDragEnd);
     }
 
     destroy() {
-      this.gameObject.off('pointerdown');
-      this.gameObject.off('dragstart');
-      this.gameObject.off('drag');
-      this.gameObject.off('dragend');
-      this.gameObject.off('pointerup');
+      this.gameObject.off('pointerdown', this.handlePointerDown);
+      this.gameObject.off('pointerup', this.handlePointerUp);
+      this.scene.input.off('dragstart', this.handleDragStart);
+      this.scene.input.off('drag', this.handleDrag);
+      this.scene.input.off('dragend', this.handleDragEnd);
     }
   }
 
