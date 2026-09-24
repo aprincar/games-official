@@ -47,6 +47,10 @@ async function startStaticServer() {
   const server = http.createServer((req, res) => {
     try {
       const pathname = decodeURIComponent(new URL(req.url || '/', 'http://127.0.0.1').pathname);
+      if (pathname === '/favicon.ico') {
+        res.writeHead(204).end();
+        return;
+      }
       const resolved = path.resolve(ROOT, '.' + pathname);
       if (resolved !== ROOT && !resolved.startsWith(ROOT + path.sep)) {
         res.writeHead(403).end('forbidden');
@@ -356,6 +360,7 @@ export async function mouseDrag(client, from, to, steps = 8) {
   await client.send('Input.dispatchMouseEvent', {
     type: 'mousePressed', x: from.x, y: from.y, button: 'left', buttons: 1, clickCount: 1,
   });
+  await sleep(24);
   for (let i = 1; i <= steps; i++) {
     const ratio = i / steps;
     await client.send('Input.dispatchMouseEvent', {
@@ -365,7 +370,9 @@ export async function mouseDrag(client, from, to, steps = 8) {
       button: 'left',
       buttons: 1,
     });
+    await sleep(18);
   }
+  await sleep(24);
   await client.send('Input.dispatchMouseEvent', {
     type: 'mouseReleased', x: to.x, y: to.y, button: 'left', buttons: 0, clickCount: 1,
   });
@@ -376,6 +383,7 @@ export async function touchDrag(client, from, to, steps = 8) {
     type: 'touchStart',
     touchPoints: [{ x: from.x, y: from.y, id: 1, radiusX: 1, radiusY: 1, force: 1 }],
   });
+  await sleep(24);
   for (let i = 1; i <= steps; i++) {
     const ratio = i / steps;
     await client.send('Input.dispatchTouchEvent', {
@@ -389,7 +397,9 @@ export async function touchDrag(client, from, to, steps = 8) {
         force: 1,
       }],
     });
+    await sleep(18);
   }
+  await sleep(24);
   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 }
 
