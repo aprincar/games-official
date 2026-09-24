@@ -368,6 +368,36 @@
     };
   });
 
+  function objectAt(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(pointer, camera);
+    const hit = raycaster.intersectObjects(objects)[0];
+    if (hit) return hit.object;
+
+    const localX = clientX - rect.left;
+    const localY = clientY - rect.top;
+    const targets = publishedTargets();
+
+    let nearest = null;
+    let nearestDistance = Infinity;
+
+    for (const target of targets) {
+      const distance = Math.hypot(localX - target.x, localY - target.y);
+      const radius = Math.max(target.w, target.h) / 2;
+      if (distance <= radius && distance < nearestDistance) {
+        nearest = objects.find(
+          (object) => object.userData.id === target.value
+        );
+        nearestDistance = distance;
+      }
+    }
+
+    return nearest;
+  }
+
   canvas.addEventListener('pointerup', (event) => {
     const wasDragging = dragging;
     downPoint = undefined;
@@ -379,15 +409,8 @@
 
     publish({ lastGesture: 'tap' });
 
-    const rect = canvas.getBoundingClientRect();
-    pointer.x =
-      ((event.clientX - rect.left) / rect.width) * 2 - 1;
-    pointer.y =
-      -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
-    raycaster.setFromCamera(pointer, camera);
-    const hit = raycaster.intersectObjects(objects)[0];
-    if (hit) choose(hit.object);
+    const object = objectAt(event.clientX, event.clientY);
+    if (object) choose(object);
   });
 
   canvas.addEventListener('pointercancel', () => {
