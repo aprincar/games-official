@@ -386,6 +386,16 @@ export async function mouseDrag(client, from, to, steps = 8) {
   });
 }
 
+export async function touchTap(client, point) {
+  await client.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x: point.x, y: point.y, id: 1, radiusX: 1, radiusY: 1, force: 1 }],
+  });
+  await sleep(36);
+  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await sleep(24);
+}
+
 export async function touchDrag(client, from, to, steps = 8) {
   await client.send('Input.dispatchTouchEvent', {
     type: 'touchStart',
