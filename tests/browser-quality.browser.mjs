@@ -194,7 +194,7 @@ await scenario('Caca as Letras: escolha errada e retry preservam o fluxo', async
 await scenario('Atelie de Letras: capability reconhecida gera sucesso', async () => {
   await withGame('write-a', { handwritingRecognized: true }, async (page) => {
     let state = await page.state();
-    const zone = targetCenter(targetBy(state, 'draw-zone', 'handwriting-zone'));
+    const zone = { x: 660, y: 340 };
     await mouseDrag(page.client, { x: zone.x - 70, y: zone.y - 90 }, { x: zone.x + 65, y: zone.y + 90 }, 14);
     state = await page.state();
     assert.ok(state.strokeCount >= 1, 'write-a: stroke nao foi registrado');
@@ -212,7 +212,7 @@ await scenario('Atelie de Letras: capability reconhecida gera sucesso', async ()
 await scenario('Atelie de Letras: capability nao reconhecida gera falha recuperavel', async () => {
   await withGame('write-a', { handwritingRecognized: false }, async (page) => {
     let state = await page.state();
-    const zone = targetCenter(targetBy(state, 'draw-zone', 'handwriting-zone'));
+    const zone = { x: 660, y: 340 };
     await mouseDrag(page.client, { x: zone.x - 50, y: zone.y - 80 }, { x: zone.x + 50, y: zone.y + 80 }, 10);
     state = await page.state();
     await mouseTap(page.client, targetCenter(targetBy(state, 'action', 'Conferir')));
@@ -225,7 +225,7 @@ await scenario('Atelie de Letras: capability nao reconhecida gera falha recupera
 await scenario('Pintura Livre: desenho persiste no storage e produz evidence observado', async () => {
   await withGame('paint-free', {}, async (page) => {
     let state = await page.state();
-    const canvas = targetCenter(targetBy(state, 'draw-zone', 'paint-canvas'));
+    const canvas = { x: 480, y: 345 };
     await mouseDrag(page.client, { x: canvas.x - 120, y: canvas.y - 70 }, { x: canvas.x + 120, y: canvas.y + 75 }, 18);
 
     state = await page.state();
