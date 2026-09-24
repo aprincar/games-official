@@ -53,6 +53,7 @@
         });
 
         hitZone.on('pointerdown', () => {
+          if (this.locked) return;
           if (!animalContainer.getData('counted')) {
             animalContainer.setData('counted', true);
             this.tappedAnimals += 1;
