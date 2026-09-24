@@ -452,12 +452,12 @@ await scenario('Caca as Letras: escolha errada e retry preservam o fluxo', async
     let state = await page.state();
     const wrong = wrongChoice(state);
     assert.ok(wrong, 'letter-hunt: alternativa incorreta ausente');
-    await mouseTap(page.client, targetCenter(wrong));
+    await touchTap(page.client, targetCenter(wrong));
     await waitForResult(page, 'failure');
     await waitForInputReady(page);
 
     state = await page.state();
-    await mouseTap(page.client, choiceTarget(state, state.challenge.answer));
+    await touchTap(page.client, choiceTarget(state, state.challenge.answer));
     await waitForResult(page, 'success');
     await assertEvidence(page, 'failure');
     await assertEvidence(page, 'success');
