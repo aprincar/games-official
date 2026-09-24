@@ -140,7 +140,9 @@ class CdpClient {
       userGesture: true,
     });
     if (response.exceptionDetails) {
-      throw new Error(response.exceptionDetails.text || 'Falha ao avaliar expressao no browser');
+      const details = response.exceptionDetails;
+      const description = details.exception && details.exception.description;
+      throw new Error(description || details.text || 'Falha ao avaliar expressao no browser');
     }
     return response.result && response.result.value;
   }
