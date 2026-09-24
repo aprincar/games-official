@@ -53,6 +53,8 @@
       this.roundGroup = this.add.container(0, 0);
       this.statusText.setText('');
       this.locked = false;
+      this.attempts = 0;
+      this.consecutiveFailures = 0;
       this.testTargets = [];
       this.challenge = null;
     }
@@ -75,19 +77,41 @@
       this.submitResult(value === this.challenge.answer, { selected: value, target: this.challenge.answer, sourceX: source?.x });
     }
 
-    async recordEvidence(ok, metadata = {}) {
-      this.attempts++;
-      const assistanceLevel = this.consecutiveFailures >= 2 ? 'visual-cue' : 'none';
-      return aprincar.evidence.submit({
-        skillId: CFG.skillId,
-        result: ok ? 'success' : 'failure',
-        independent: this.consecutiveFailures === 0,
-        assistance: assistanceLevel,
-        difficulty: this.challenge?.difficulty ?? 0.35,
-        confidence: ok ? 0.95 : 0.8,
+    async recordOutcome(result, metadata = {}, options = {}) {
+      const failuresBeforeAttempt = this.consecutiveFailures;
+      const assistance = options.assistance ??
+        (result !== 'observed' && failuresBeforeAttempt >= 2 ? 'visual-cue' : 'none');
+      const independent = options.independent ??
+        (result === 'observed' ? true : failuresBeforeAttempt === 0);
+
+      this.attempts += 1;
+      const payload = {
+        skillId: options.skillId ?? CFG.skillId,
+        result,
+        independent,
+        assistance,
+        difficulty: options.difficulty ?? this.challenge?.difficulty ?? 0.35,
+        confidence: options.confidence ?? (result === 'failure' ? 0.8 : 0.95),
         attempts: this.attempts,
         metadata: { level: this.level, ...metadata }
+      };
+
+      const response = await aprincar.evidence.submit(payload);
+
+      if (result === 'failure') this.consecutiveFailures += 1;
+      else if (result === 'success') this.consecutiveFailures = 0;
+
+      this.updateState({
+        attempts: this.attempts,
+        independent: payload.independent,
+        assistance: payload.assistance
       });
+
+      return response;
+    }
+
+    async recordEvidence(ok, metadata = {}) {
+      return this.recordOutcome(ok ? 'success' : 'failure', metadata);
     }
 
     async submitResult(ok, metadata = {}) {
@@ -97,7 +121,6 @@
       await this.recordEvidence(ok, metadata);
 
       if (ok) {
-        this.consecutiveFailures = 0;
         this.stars += 2;
         this.starText.setText(`⭐ ${this.stars}`);
         if (window.AprincarFeedback) window.AprincarFeedback.celebrate(this, 480, 320);
@@ -107,7 +130,6 @@
           this.nextRound();
         });
       } else {
-        this.consecutiveFailures++;
         if (window.AprincarAudio) window.AprincarAudio.softError();
         this.locked = false;
         this.updateState({ inputReady: true });
