@@ -2,6 +2,10 @@
 
 Jogos oficiais que acompanham o Aprincar V1.
 
+> **Status:** o catálogo está funcional como base de distribuição, mas entrou em uma sprint dedicada de hardening de qualidade. O foco agora é corrigir interações inconsistentes, melhorar a precisão dos desafios e adicionar testes comportamentais no navegador antes de tratar os jogos como conteúdo final.
+>
+> Consulte [Sprint — Game Quality Hardening](docs/SPRINT_GAME_QUALITY.md).
+
 ## Arquitetura
 
 Os diretórios `games/*` são **artefatos gerados**. O código-fonte fica em:
@@ -14,6 +18,8 @@ Os diretórios `games/*` são **artefatos gerados**. O código-fonte fica em:
 - `vendor/` — runtimes open source incorporados ao `single-html`, com suas licenças.
 
 A regra central é: **o renderer nunca decide qual é a resposta correta**. O `Challenge Generator` cria um `ChallengeSpec` válido e testável; Phaser/Three.js apenas apresentam a experiência.
+
+A sprint de qualidade irá aproximar definição, desafio, cena e testes por jogo para reduzir o custo de manutenção sem duplicar primitivas realmente compartilhadas.
 
 ## Jogos V1
 
@@ -34,10 +40,11 @@ A regra central é: **o renderer nunca decide qual é a resposta correta**. O `C
 npm run check
 ```
 
-O gate executa fuzz dos geradores, gera todos os `game.html`, valida manifests/skills/permissões e produz o registry com hashes SHA-256.
+O gate atual executa fuzz dos geradores, gera todos os `game.html`, valida manifests/skills/permissões e produz o registry com hashes SHA-256.
 
-Leia também `docs/README.md` e `docs/ARCHITECTURE.md` antes de alterar geradores ou runtimes.
+Durante a sprint de hardening, esse gate será ampliado com cenários browser-level por jogo. O objetivo é validar não apenas “gera corretamente”, mas também “funciona corretamente quando usado”.
 
+Leia também `docs/README.md`, `docs/ARCHITECTURE.md` e `docs/SPRINT_GAME_QUALITY.md` antes de alterar geradores ou runtimes.
 
 ## Contrato de permissões
 
