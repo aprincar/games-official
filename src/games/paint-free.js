@@ -22,6 +22,7 @@
       const canvasZone = this.add.rectangle(480, 345, 680, 370, 0xffffff, 0.001).setInteractive();
       this.paintGraphics = this.add.graphics();
       this.roundGroup.add([canvasGfx, canvasZone, this.paintGraphics]);
+      this.target('paint-canvas', 480, 345, 680, 370, 'draw-zone');
 
       // Paleta de Cores à Esquerda
       PAINT_COLORS.forEach((color, i) => {
