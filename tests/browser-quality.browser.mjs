@@ -87,7 +87,7 @@ await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e concl
   await withGame('fruit-basket', {}, async (page) => {
     await page.client.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
     await page.client.evaluate(`(() => {
-      const scene = Phaser.GAMES[0].scene.scenes[0];
+      const scene = Phaser.GAMES[0].scene.getScenes(true)[0];
       window.__APRINCAR_DRAG_DEBUG__ = [];
       for (const eventName of ['dragstart', 'drag', 'dragend']) {
         scene.input.on(eventName, (pointer, gameObject, dragX, dragY) => {
@@ -133,7 +133,7 @@ await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e concl
 await scenario('Torre de Blocos: drag pointer monta a torre e conclui', async () => {
   await withGame('block-tower', {}, async (page) => {
     await page.client.evaluate(`(() => {
-      const scene = Phaser.GAMES[0].scene.scenes[0];
+      const scene = Phaser.GAMES[0].scene.getScenes(true)[0];
       window.__APRINCAR_DRAG_DEBUG__ = [];
       for (const eventName of ['dragstart', 'drag', 'dragend']) {
         scene.input.on(eventName, (pointer, gameObject, dragX, dragY) => {
