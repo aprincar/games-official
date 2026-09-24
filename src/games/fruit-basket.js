@@ -7,57 +7,159 @@
     nextRound() {
       this.clearRound();
       this.levelText.setText(`Fase ${this.level}`);
+
       const seed = (Date.now() % 100000) + this.level * 97;
       const rng = createSeededRandom(seed);
-      this.challenge = generateCountingChallenge({ rng, seed, level: this.level, theme: 'fruit' });
+      this.challenge = generateCountingChallenge({
+        rng,
+        seed,
+        level: this.level,
+        theme: 'fruit'
+      });
+
+      const layout = this.layout;
+      const stage = layout.stage;
+
       this.selected = 0;
       this.basket = [];
       this.fruits = [];
-
       this.promptText.setText(`Coloque ${this.challenge.answer} frutas na cesta`);
 
-      const basketContainer = this.add.container(480, 430);
+      const buttonHeight = Math.max(layout.touchTarget, 58);
+      const basketWidth = window.AprincarLayout.clamp(
+        stage.width * 0.82,
+        250,
+        layout.portrait ? 330 : 380
+      );
+      const basketHeight = window.AprincarLayout.clamp(
+        stage.height * 0.17,
+        88,
+        118
+      );
+      const basketY = stage.top + stage.height * 0.67;
+
+      this.basketBounds = {
+        left: stage.centerX - basketWidth / 2,
+        top: basketY - basketHeight / 2,
+        width: basketWidth,
+        height: basketHeight
+      };
+
+      const basketContainer = this.add.container(stage.centerX, basketY);
       const basketGfx = this.add.graphics();
       basketGfx.fillStyle(0xc98749, 1);
-      basketGfx.fillRoundedRect(-140, -45, 280, 90, 16);
+      basketGfx.fillRoundedRect(
+        -basketWidth / 2,
+        -basketHeight / 2,
+        basketWidth,
+        basketHeight,
+        16
+      );
       basketGfx.lineStyle(4, 0x8f5b2c, 1);
-      basketGfx.strokeRoundedRect(-140, -45, 280, 90, 16);
-      basketGfx.lineStyle(2, 0x8f5b2c, 0.45);
-      for (let x = -110; x <= 110; x += 30) basketGfx.lineBetween(x, -40, x, 40);
+      basketGfx.strokeRoundedRect(
+        -basketWidth / 2,
+        -basketHeight / 2,
+        basketWidth,
+        basketHeight,
+        16
+      );
+      basketGfx.lineStyle(2, 0x8f5b2c, 0.4);
+      for (
+        let x = -basketWidth / 2 + 28;
+        x <= basketWidth / 2 - 28;
+        x += Math.max(28, basketWidth / 9)
+      ) {
+        basketGfx.lineBetween(
+          x,
+          -basketHeight / 2 + 8,
+          x,
+          basketHeight / 2 - 8
+        );
+      }
 
       this.counter = this.add.text(0, 0, '0', {
         fontFamily: FONT,
-        fontSize: '46px',
+        fontSize: layout.portrait ? '36px' : '42px',
         fontStyle: 'bold',
         color: '#ffffff'
       }).setOrigin(0.5);
+
       basketContainer.add([basketGfx, this.counter]);
       this.roundGroup.add(basketContainer);
 
       const count = Math.min(10, this.challenge.answer + 3);
-      for (let i = 0; i < count; i++) {
-        const x = 200 + (i % 5) * 140;
-        const y = 205 + Math.floor(i / 5) * 90;
-        const fruitType = FRUIT_TYPES[i % FRUIT_TYPES.length];
+      const fruitArea = {
+        left: stage.left,
+        top: stage.top + 6,
+        width: stage.width,
+        height: Math.max(170, stage.height * 0.43)
+      };
+      const cols = window.AprincarLayout.columnsFor(
+        count,
+        layout,
+        layout.portrait ? 4 : 5
+      );
+      const fruitGrid = window.AprincarLayout.grid(count, fruitArea, {
+        cols,
+        gapX: layout.portrait ? 8 : 14,
+        gapY: layout.portrait ? 8 : 12
+      });
 
-        const fruitContainer = this.add.container(x, y);
+      const slotCols = Math.min(5, count);
+      const slotRows = Math.ceil(count / slotCols);
+      const slotWidth = basketWidth / slotCols;
+      const slotHeight = basketHeight / Math.max(1, slotRows);
+      this.basketSlots = Array.from({ length: count }, (_, index) => {
+        const col = index % slotCols;
+        const row = Math.floor(index / slotCols);
+        return {
+          x:
+            this.basketBounds.left +
+            slotWidth * col +
+            slotWidth / 2,
+          y:
+            this.basketBounds.top +
+            slotHeight * row +
+            slotHeight / 2
+        };
+      });
+
+      for (let index = 0; index < count; index += 1) {
+        const cell = fruitGrid.points[index];
+        const fruitType = FRUIT_TYPES[index % FRUIT_TYPES.length];
+        const visualSize = window.AprincarLayout.clamp(
+          Math.min(cell.width, cell.height) * 0.64,
+          46,
+          layout.portrait ? 62 : 70
+        );
+        const hitSize = Math.max(layout.touchTarget, visualSize + 10);
+
+        const fruitContainer = this.add.container(cell.x, cell.y);
         const fruitGfx = this.add.graphics();
-        window.AprincarVectorArt.drawFruit(fruitGfx, fruitType, 0, 0, 58);
-        const hitZone = this.add.circle(0, 0, 44, 0xffffff, 0.001);
+        window.AprincarVectorArt.drawFruit(
+          fruitGfx,
+          fruitType,
+          0,
+          0,
+          visualSize
+        );
+
+        const hitZone = this.add.circle(0, 0, hitSize / 2, 0xffffff, 0.001);
         fruitContainer.add([fruitGfx, hitZone]);
-        fruitContainer.setSize(88, 88);
+        fruitContainer.setSize(hitSize, hitSize);
         this.roundGroup.add(fruitContainer);
 
         const fruit = {
-          id: `fruit-${i + 1}`,
+          id: `fruit-${index + 1}`,
           container: fruitContainer,
-          homeX: x,
-          homeY: y
+          homeX: cell.x,
+          homeY: cell.y,
+          visualSize
         };
         this.fruits.push(fruit);
 
-        this.target(fruit.id, x, y, 88, 88, 'drag-source');
-        this.target(fruit.id, x, y, 88, 88, 'toggle');
+        this.target(fruit.id, cell.x, cell.y, hitSize, hitSize, 'drag-source');
+        this.target(fruit.id, cell.x, cell.y, hitSize, hitSize, 'toggle');
 
         window.AprincarInputGestures.attachTapOrDrag(this, fruitContainer, {
           threshold: 10,
@@ -73,7 +175,12 @@
             }
 
             const inBasket = Phaser.Geom.Rectangle.Contains(
-              new Phaser.Geom.Rectangle(340, 365, 280, 130),
+              new Phaser.Geom.Rectangle(
+                this.basketBounds.left,
+                this.basketBounds.top,
+                this.basketBounds.width,
+                this.basketBounds.height
+              ),
               fruitContainer.x,
               fruitContainer.y
             );
@@ -101,30 +208,63 @@
             }
 
             this.placeFruit(fruit);
-            this.tweens.add({ targets: basketContainer, scale: 1.06, duration: 100, yoyo: true });
+            this.tweens.add({
+              targets: basketContainer,
+              scale: 1.04,
+              duration: 100,
+              yoyo: true
+            });
             if (window.AprincarAudio) window.AprincarAudio.drop();
             this.publishFruits('tap-fallback');
           }
         });
       }
 
-      this.target('basket', 480, 430, 300, 150, 'drop-zone');
-      const check = this.addCardButton(480, 535, 200, 60, 'Conferir', '__check__', C.sun, 'action');
+      this.target(
+        'basket',
+        stage.centerX,
+        basketY,
+        basketWidth,
+        basketHeight,
+        'drop-zone'
+      );
+
+      const check = this.addCardButton(
+        stage.centerX,
+        stage.bottom - buttonHeight / 2 - 4,
+        Math.min(stage.width * 0.68, 230),
+        buttonHeight,
+        'Conferir',
+        '__check__',
+        C.sun,
+        'action'
+      );
       check.removeAllListeners('pointerup');
       check.on('pointerup', () => {
         if (this.locked) return;
         const ok = this.selected === this.challenge.answer;
-        this.submitResult(ok, { selected: this.selected, target: this.challenge.answer });
+        this.submitResult(ok, {
+          selected: this.selected,
+          target: this.challenge.answer
+        });
       });
 
       window.__APRINCAR_GAME_STATE__ = {
         mode: 'counting',
         variant: 'fruit',
+        familyId: 'quantities',
+        objective: window.APRINCAR_GAME_CONFIG.objective,
         level: this.level,
         challenge: this.challenge,
         targets: this.testTargets,
         selectedCount: this.selected,
         fruitStates: this.fruitSnapshot(),
+        basketBounds: this.basketBounds,
+        viewport: {
+          width: layout.width,
+          height: layout.height,
+          portrait: layout.portrait
+        },
         attempts: this.attempts,
         inputReady: true
       };
@@ -159,10 +299,11 @@
 
     syncBasket() {
       this.basket.forEach((fruit, index) => {
-        fruit.container.x = 380 + (index % 5) * 50;
-        fruit.container.y = 405 + Math.floor(index / 5) * 42;
+        const slot = this.basketSlots[index];
+        fruit.container.x = slot.x;
+        fruit.container.y = slot.y;
         fruit.container.setAlpha(1);
-        fruit.container.setScale(0.82);
+        fruit.container.setScale(this.layout.portrait ? 0.74 : 0.82);
       });
       this.selected = this.basket.length;
       this.counter.setText(String(this.selected));
@@ -184,6 +325,7 @@
       this.updateState({
         selectedCount: this.selected,
         fruitStates: this.fruitSnapshot(),
+        basketBounds: this.basketBounds,
         lastGesture,
         inputReady: !this.locked
       });
