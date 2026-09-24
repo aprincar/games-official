@@ -35,45 +35,24 @@
         this.threshold
       );
 
-      const trace = (eventName, pointer, gameObject, dragX, dragY) => {
-        if (!Array.isArray(window.__APRINCAR_DRAG_DEBUG__)) return;
-        window.__APRINCAR_DRAG_DEBUG__.push({
-          eventName,
-          pointerX: pointer?.x,
-          pointerY: pointer?.y,
-          dragX,
-          dragY,
-          objectType: gameObject?.type,
-          objectX: gameObject?.x,
-          objectY: gameObject?.y,
-          sameObject: gameObject === this.gameObject,
-          isDown: this.isDown,
-          isDragging: this.isDragging
-        });
-      };
-
-      this.handlePointerDown = (pointer) => {
-        trace('pointerdown', pointer, this.gameObject);
+      this.handlePointerDown = () => {
         this.isDragging = false;
         this.isDown = true;
         this.gestureHandled = false;
       };
 
       this.handleDragStart = (pointer, gameObject) => {
-        trace('dragstart', pointer, gameObject);
         if (gameObject !== this.gameObject || !this.isDown) return;
         this.isDragging = true;
         if (this.onDragStart) this.onDragStart(pointer, this.gameObject);
       };
 
       this.handleDrag = (pointer, gameObject, dragX, dragY) => {
-        trace('drag', pointer, gameObject, dragX, dragY);
         if (gameObject !== this.gameObject || !this.isDragging) return;
         if (this.onDrag) this.onDrag(pointer, this.gameObject, dragX, dragY);
       };
 
       this.handleDragEnd = (pointer, gameObject) => {
-        trace('dragend', pointer, gameObject);
         if (gameObject !== this.gameObject || !this.isDragging) return;
         if (this.onDragEnd) this.onDragEnd(pointer, this.gameObject);
         this.gestureHandled = true;
@@ -82,7 +61,6 @@
       };
 
       this.handlePointerUp = (pointer) => {
-        trace('pointerup', pointer, this.gameObject);
         if (this.isDragging) return;
         if (this.isDown && !this.gestureHandled && this.onTap) {
           this.onTap(pointer, this.gameObject);
