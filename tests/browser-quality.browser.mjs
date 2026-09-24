@@ -84,8 +84,7 @@ await scenario('Conte os Bichos: falha, retry e sucesso observavel', async () =>
 });
 
 await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e conclui', async () => {
-  await withGame('fruit-basket', {}, async (page) => {
-    await page.client.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
+  await withGame('fruit-basket', { touch: true }, async (page) => {
     await page.client.evaluate('window.__APRINCAR_DRAG_DEBUG__ = []');
     let state = await page.state();
     const sources = state.targets.filter((target) => target.kind === 'drag-source');
@@ -103,7 +102,6 @@ await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e concl
       });
     }
 
-    await page.client.send('Emulation.setTouchEmulationEnabled', { enabled: false });
     state = await page.state();
     assert.equal(state.lastGesture, 'drag');
     await mouseTap(page.client, targetCenter(targetBy(state, 'action', 'Conferir')));
