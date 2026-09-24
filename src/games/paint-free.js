@@ -29,6 +29,7 @@
         const swatch = this.add.circle(80, y, 18, color).setInteractive({ useHandCursor: true });
         this.roundGroup.add(swatch);
         swatch.on('pointerup', () => {
+          if (this.locked) return;
           this.selectedColor = color;
           if (window.AprincarAudio) window.AprincarAudio.click();
           this.tweens.add({ targets: swatch, scale: 1.25, duration: 100, yoyo: true });
@@ -40,6 +41,7 @@
       let previous = null;
 
       canvasZone.on('pointerdown', p => {
+        if (this.locked) return;
         current = [];
         previous = { x: p.x, y: p.y, color: this.selectedColor, size: this.brushSize };
         this.paintStrokes.push(current);
@@ -48,7 +50,7 @@
       });
 
       canvasZone.on('pointermove', p => {
-        if (!p.isDown || !current || !previous) return;
+        if (this.locked || !p.isDown || !current || !previous) return;
         const totalPoints = this.paintStrokes.reduce((sum, s) => sum + s.length, 0);
         if (totalPoints < 500) current.push(this.normPoint(p, canvasZone));
         
@@ -67,24 +69,35 @@
       const save = this.addCardButton(800, 560, 190, 58, 'Guardar desenho', 'Guardar desenho', C.leaf, 'action');
       save.removeAllListeners('pointerup');
       save.on('pointerup', async () => {
-        await aprincar.storage.set('paint:last', {
-          strokes: this.paintStrokes,
-          savedAt: new Date().toISOString()
-        });
-        this.attempts++;
-        if (window.AprincarFeedback) window.AprincarFeedback.celebrate(this, 480, 320);
-        await aprincar.evidence.submit({
-          skillId: 'creativity.visual-expression',
-          result: 'observed',
-          independent: true,
-          assistance: 'none',
-          difficulty: 0.2,
-          confidence: 0.95,
-          attempts: this.attempts,
-          metadata: { level: this.level, creative: true, strokeCount: this.paintStrokes.length }
-        });
-        this.statusText.setText('Desenho guardado com carinho! ✨');
-        this.updateState({ paintSaved: true, lastResult: 'observed' });
+        if (this.locked) return;
+        this.locked = true;
+        this.updateState({ inputReady: false });
+
+        try {
+          await aprincar.storage.set('paint:last', {
+            strokes: this.paintStrokes,
+            savedAt: new Date().toISOString()
+          });
+
+          await this.recordOutcome(
+            'observed',
+            { creative: true, strokeCount: this.paintStrokes.length },
+            {
+              skillId: 'creativity.visual-expression',
+              independent: true,
+              assistance: 'none',
+              difficulty: 0.2,
+              confidence: 0.95
+            }
+          );
+
+          if (window.AprincarFeedback) window.AprincarFeedback.celebrate(this, 480, 320);
+          this.statusText.setText('Desenho guardado com carinho! ✨');
+          this.updateState({ paintSaved: true, lastResult: 'observed' });
+        } finally {
+          this.locked = false;
+          this.updateState({ inputReady: true });
+        }
       });
 
       window.__APRINCAR_GAME_STATE__ = {
@@ -93,6 +106,7 @@
         level: this.level,
         challenge: null,
         targets: this.testTargets,
+        attempts: this.attempts,
         inputReady: true
       };
     }
