@@ -33,9 +33,9 @@
 
         window.AprincarInputGestures.attachTapOrDrag(this, hitZone, {
           threshold: 10,
-          onDrag: (_pointer, _gameObject, dragX, dragY) => {
-            blockContainer.x = dragX;
-            blockContainer.y = dragY;
+          onDrag: (pointer) => {
+            blockContainer.x = pointer.x;
+            blockContainer.y = pointer.y;
           },
           onDragEnd: () => {
             const inTower = blockContainer.x > 340 && blockContainer.x < 620 && blockContainer.y > 325;
