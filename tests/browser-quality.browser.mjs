@@ -86,6 +86,25 @@ await scenario('Conte os Bichos: falha, retry e sucesso observavel', async () =>
 await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e conclui', async () => {
   await withGame('fruit-basket', {}, async (page) => {
     await page.client.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
+    await page.client.evaluate(`(() => {
+      const scene = Phaser.GAMES[0].scene.scenes.find((candidate) => candidate.sys && candidate.sys.isActive());
+      window.__APRINCAR_DRAG_DEBUG__ = [];
+      for (const eventName of ['dragstart', 'drag', 'dragend']) {
+        scene.input.on(eventName, (pointer, gameObject, dragX, dragY) => {
+          window.__APRINCAR_DRAG_DEBUG__.push({
+            eventName,
+            pointerX: pointer && pointer.x,
+            pointerY: pointer && pointer.y,
+            dragX,
+            dragY,
+            objectType: gameObject && gameObject.type,
+            objectX: gameObject && gameObject.x,
+            objectY: gameObject && gameObject.y
+          });
+        });
+      }
+      return true;
+    })()`);
     let state = await page.state();
     const sources = state.targets.filter((target) => target.kind === 'drag-source');
     const basket = targetCenter(targetBy(state, 'drop-zone', 'basket'));
@@ -96,7 +115,10 @@ await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e concl
       await waitFor(async () => {
         const current = await page.state();
         return current.selectedCount === i + 1;
-      }, { label: 'fruit-basket: selectedCount=' + (i + 1) });
+      }, { label: 'fruit-basket: selectedCount=' + (i + 1) }).catch(async (error) => {
+        const debug = await page.client.evaluate('window.__APRINCAR_DRAG_DEBUG__');
+        throw new Error(error.message + ' debug=' + JSON.stringify(debug));
+      });
     }
 
     await page.client.send('Emulation.setTouchEmulationEnabled', { enabled: false });
@@ -110,6 +132,25 @@ await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e concl
 
 await scenario('Torre de Blocos: drag pointer monta a torre e conclui', async () => {
   await withGame('block-tower', {}, async (page) => {
+    await page.client.evaluate(`(() => {
+      const scene = Phaser.GAMES[0].scene.scenes.find((candidate) => candidate.sys && candidate.sys.isActive());
+      window.__APRINCAR_DRAG_DEBUG__ = [];
+      for (const eventName of ['dragstart', 'drag', 'dragend']) {
+        scene.input.on(eventName, (pointer, gameObject, dragX, dragY) => {
+          window.__APRINCAR_DRAG_DEBUG__.push({
+            eventName,
+            pointerX: pointer && pointer.x,
+            pointerY: pointer && pointer.y,
+            dragX,
+            dragY,
+            objectType: gameObject && gameObject.type,
+            objectX: gameObject && gameObject.x,
+            objectY: gameObject && gameObject.y
+          });
+        });
+      }
+      return true;
+    })()`);
     let state = await page.state();
     const sources = state.targets.filter((target) => target.kind === 'drag-source');
     const tower = targetCenter(targetBy(state, 'stack-zone', 'tower'));
@@ -120,7 +161,10 @@ await scenario('Torre de Blocos: drag pointer monta a torre e conclui', async ()
       await waitFor(async () => {
         const current = await page.state();
         return current.selectedCount === i + 1 && current.stackHeight === i + 1;
-      }, { label: 'block-tower: stackHeight=' + (i + 1) });
+      }, { label: 'block-tower: stackHeight=' + (i + 1) }).catch(async (error) => {
+        const debug = await page.client.evaluate('window.__APRINCAR_DRAG_DEBUG__');
+        throw new Error(error.message + ' debug=' + JSON.stringify(debug));
+      });
     }
 
     state = await page.state();
