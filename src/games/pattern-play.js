@@ -1,4 +1,4 @@
-// Trem dos Padrões — Trem dos Padrões
+// Trem dos Padrões — um único conjunto de opções suporta tap ou drag.
 (() => {
   const { C, FONT } = window.AprincarConstants;
   const PALETTE = [C.purple, C.coral, C.sun, C.leaf, C.sky];
@@ -8,100 +8,185 @@
     nextRound() {
       this.clearRound();
       this.levelText.setText(`Fase ${this.level}`);
+
       const seed = (Date.now() % 100000) + this.level * 97;
       const rng = createSeededRandom(seed);
       this.challenge = generatePatternChallenge({ rng, seed, level: this.level });
 
-      this.promptText.setText('Qual peça continua o padrão do trem?');
-
-      // Trilhos de trem
-      const trackGfx = this.add.graphics();
-      trackGfx.lineStyle(6, 0x94a3b8, 1);
-      trackGfx.lineBetween(60, 325, 900, 325);
-      trackGfx.lineBetween(60, 335, 900, 335);
-      // Dormentes de madeira
-      trackGfx.lineStyle(4, 0x78350f, 0.8);
-      for (let x = 70; x <= 890; x += 32) {
-        trackGfx.lineBetween(x, 320, x, 340);
-      }
-      this.roundGroup.add(trackGfx);
-
-      // Locomotiva na frente
-      const locoGfx = this.add.graphics();
-      window.AprincarVectorArt.drawTrainLocomotive(locoGfx, 820, 275);
-      this.roundGroup.add(locoGfx);
-
-      // Vagões com a sequência de padrão
+      const layout = this.layout;
+      const stage = layout.stage;
       const sequence = this.challenge.sequence || [];
-      const totalCars = sequence.length + 1; // +1 para o vagão com interrogação
-      const startX = 720 - (totalCars - 1) * 105;
+      const options = this.challenge.options || [];
 
-      sequence.forEach((token, i) => {
-        const x = startX + i * 105;
-        const y = 280;
-        const colorIdx = TOKEN_COLORS[token] ?? (i % PALETTE.length);
-        const wagonColor = PALETTE[colorIdx];
+      this.promptText.setText('Qual peça continua o padrão?');
 
-        const wagonGfx = this.add.graphics();
-        window.AprincarVectorArt.drawTrainWagon(wagonGfx, x, y, 95, 60, wagonColor);
-        const symbolText = this.add.text(x, y - 2, token, { fontFamily: FONT, fontSize: '38px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5);
-        this.roundGroup.add([wagonGfx, symbolText]);
+      const stripTop = stage.top + 20;
+      const stripHeight = window.AprincarLayout.clamp(
+        stage.height * 0.28,
+        120,
+        layout.portrait ? 170 : 150
+      );
+      const railY = stripTop + stripHeight * 0.55;
+      const totalCars = sequence.length + 1;
+      const availableWidth = stage.width - 12;
+      const carWidth = window.AprincarLayout.clamp(
+        availableWidth / Math.max(totalCars, 1) - 4,
+        26,
+        layout.portrait ? 52 : 62
+      );
+      const carHeight = window.AprincarLayout.clamp(carWidth * 0.72, 24, 48);
+      const gap = Math.max(3, (availableWidth - carWidth * totalCars) / Math.max(totalCars - 1, 1));
+      const totalWidth = carWidth * totalCars + gap * Math.max(totalCars - 1, 0);
+      const startX = stage.centerX - totalWidth / 2 + carWidth / 2;
+
+      const track = this.add.graphics();
+      track.lineStyle(layout.portrait ? 3 : 4, 0x94a3b8, 0.8);
+      track.lineBetween(
+        stage.left + 4,
+        railY + carHeight * 0.46,
+        stage.right - 4,
+        railY + carHeight * 0.46
+      );
+      this.roundGroup.add(track);
+
+      sequence.forEach((token, index) => {
+        const x = startX + index * (carWidth + gap);
+        const colorIndex = TOKEN_COLORS[token] ?? index % PALETTE.length;
+        const color = PALETTE[colorIndex];
+
+        const wagon = this.add.graphics();
+        wagon.fillStyle(color, 0.92);
+        wagon.fillRoundedRect(
+          x - carWidth / 2,
+          railY - carHeight / 2,
+          carWidth,
+          carHeight,
+          Math.min(10, carHeight * 0.2)
+        );
+        const symbol = this.add.text(x, railY, token, {
+          fontFamily: FONT,
+          fontSize: `${Math.round(window.AprincarLayout.clamp(carHeight * 0.56, 16, 28))}px`,
+          fontStyle: 'bold',
+          color: '#ffffff'
+        }).setOrigin(0.5);
+
+        this.roundGroup.add([wagon, symbol]);
       });
 
-      // Vagão final vazio com "?"
-      const targetX = startX + sequence.length * 105;
-      const targetY = 280;
-      const targetWagonGfx = this.add.graphics();
-      targetWagonGfx.fillStyle(0xe2e8f0, 0.6);
-      targetWagonGfx.fillRoundedRect(targetX - 47, targetY - 30, 95, 60, 8);
-      targetWagonGfx.lineStyle(3, 0x94a3b8, 1);
-      targetWagonGfx.strokeRoundedRect(targetX - 47, targetY - 30, 95, 60, 8);
-      const qMark = this.add.text(targetX, targetY - 2, '?', { fontFamily: FONT, fontSize: '36px', fontStyle: 'bold', color: '#64748b' }).setOrigin(0.5);
-      this.roundGroup.add([targetWagonGfx, qMark]);
-      this.target('pattern-slot', targetX, targetY, 100, 72, 'drop-zone');
+      const targetX = startX + sequence.length * (carWidth + gap);
+      const targetY = railY;
+      const targetSize = Math.max(layout.touchTarget, carWidth + 12);
 
-      // Opções de resposta
-      const options = this.challenge.options || [];
-      options.forEach((t, i) => {
-        const x = 480 + (i - (options.length - 1) / 2) * 125;
-        const colorIdx = TOKEN_COLORS[t] ?? (i % PALETTE.length);
-        this.addCardButton(x, 465, 95, 78, t, t, PALETTE[colorIdx], 'choice');
-        const token = this.add.circle(x, 405, 30, PALETTE[colorIdx]).setInteractive({ draggable: true, useHandCursor: true });
-        const tokenText = this.add.text(x, 405, t, { fontFamily: FONT, fontSize: '28px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5);
-        this.roundGroup.add([token, tokenText]);
-        this.target(t, x, 405, 64, 64, 'drag-source');
-        window.AprincarInputGestures.attachTapOrDrag(this, token, {
+      const targetGfx = this.add.graphics();
+      targetGfx.fillStyle(0xe2e8f0, 0.78);
+      targetGfx.fillRoundedRect(
+        targetX - targetSize / 2,
+        targetY - targetSize / 2,
+        targetSize,
+        targetSize,
+        12
+      );
+      targetGfx.lineStyle(3, 0x8b5cf6, 0.75);
+      targetGfx.strokeRoundedRect(
+        targetX - targetSize / 2,
+        targetY - targetSize / 2,
+        targetSize,
+        targetSize,
+        12
+      );
+      const question = this.add.text(targetX, targetY, '?', {
+        fontFamily: FONT,
+        fontSize: `${Math.round(targetSize * 0.46)}px`,
+        fontStyle: 'bold',
+        color: '#64748b'
+      }).setOrigin(0.5);
+
+      this.roundGroup.add([targetGfx, question]);
+      this.target('pattern-slot', targetX, targetY, targetSize, targetSize, 'drop-zone');
+
+      const optionsTop = stripTop + stripHeight + 24;
+      const optionBounds = {
+        left: stage.left,
+        top: optionsTop,
+        width: stage.width,
+        height: Math.max(
+          layout.touchTarget + 24,
+          stage.bottom - optionsTop - 12
+        )
+      };
+      const optionSlots = window.AprincarLayout.row(options.length, optionBounds, {
+        gap: layout.portrait ? 12 : 18,
+        minWidth: layout.touchTarget,
+        maxWidth: layout.portrait ? 82 : 96
+      });
+
+      options.forEach((tokenValue, index) => {
+        const slot = optionSlots[index];
+        const colorIndex = TOKEN_COLORS[tokenValue] ?? index % PALETTE.length;
+        const color = PALETTE[colorIndex];
+        const size = Math.max(layout.touchTarget, Math.min(slot.width, 82));
+        const tokenContainer = this.add.container(slot.x, slot.y);
+        const circle = this.add.circle(0, 0, size / 2, color);
+        const tokenText = this.add.text(0, 0, tokenValue, {
+          fontFamily: FONT,
+          fontSize: `${Math.round(size * 0.46)}px`,
+          fontStyle: 'bold',
+          color: '#ffffff'
+        }).setOrigin(0.5);
+
+        tokenContainer.add([circle, tokenText]);
+        tokenContainer.setSize(size, size);
+        this.roundGroup.add(tokenContainer);
+
+        this.target(tokenValue, slot.x, slot.y, size, size, 'choice');
+        this.target(tokenValue, slot.x, slot.y, size, size, 'drag-source');
+
+        const restore = () => {
+          tokenContainer.x = slot.x;
+          tokenContainer.y = slot.y;
+          tokenContainer.setScale(1);
+        };
+
+        window.AprincarInputGestures.attachTapOrDrag(this, tokenContainer, {
           threshold: 10,
+          onDragStart: () => {
+            if (!this.locked) tokenContainer.setScale(1.06);
+          },
           onDrag: (pointer) => {
             if (this.locked) return;
-            token.x = pointer.x;
-            token.y = pointer.y;
-            tokenText.x = pointer.x;
-            tokenText.y = pointer.y;
+            tokenContainer.x = pointer.x;
+            tokenContainer.y = pointer.y;
           },
           onDragEnd: () => {
             if (this.locked) {
-              token.x = x;
-              token.y = 405;
-              tokenText.x = x;
-              tokenText.y = 405;
+              restore();
               return;
             }
 
-            const inSlot = Math.abs(token.x - targetX) < 70 && Math.abs(token.y - targetY) < 60;
+            const inSlot =
+              Math.abs(tokenContainer.x - targetX) <= targetSize * 0.72 &&
+              Math.abs(tokenContainer.y - targetY) <= targetSize * 0.72;
+
             if (inSlot) {
-              this.submitResult(t === this.challenge.answer, {
-                selected: t,
+              this.updateState({ lastGesture: 'drag' });
+              this.submitResult(tokenValue === this.challenge.answer, {
+                selected: tokenValue,
                 target: this.challenge.answer,
                 interaction: 'drag'
               });
             } else {
-              token.x = x;
-              token.y = 405;
-              tokenText.x = x;
-              tokenText.y = 405;
+              restore();
+              this.updateState({ lastGesture: 'drag-cancel' });
             }
-            this.updateState({ lastGesture: 'drag' });
+          },
+          onTap: () => {
+            if (this.locked) return;
+            this.updateState({ lastGesture: 'tap' });
+            this.submitResult(tokenValue === this.challenge.answer, {
+              selected: tokenValue,
+              target: this.challenge.answer,
+              interaction: 'tap'
+            });
           }
         });
       });
@@ -109,9 +194,17 @@
       window.__APRINCAR_GAME_STATE__ = {
         mode: 'pattern',
         variant: 'train',
+        familyId: 'logic',
+        objective: window.APRINCAR_GAME_CONFIG.objective,
         level: this.level,
         challenge: this.challenge,
         targets: this.testTargets,
+        viewport: {
+          width: layout.width,
+          height: layout.height,
+          portrait: layout.portrait
+        },
+        attempts: this.attempts,
         inputReady: true
       };
     }
