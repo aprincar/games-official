@@ -1,49 +1,115 @@
 // Memória dos Bichos — Reserva dos Pares
 (() => {
-  const { C, FONT } = window.AprincarConstants;
+  const { FONT } = window.AprincarConstants;
 
   class MemoryAnimalsScene extends window.AprincarBaseScene {
     nextRound() {
       this.clearRound();
       this.levelText.setText(`Fase ${this.level}`);
+
       const seed = (Date.now() % 100000) + this.level * 97;
       const rng = createSeededRandom(seed);
       this.challenge = generateMemoryChallenge({ rng, seed, level: this.level });
 
-      this.promptText.setText('Encontre todos os pares de bichos');
+      const layout = this.layout;
+      const stage = layout.stage;
+      const cards = this.challenge.cards || [];
 
+      this.promptText.setText('Encontre todos os pares');
       this.memoryOpen = [];
       this.memoryMatched = 0;
       this.memoryMoves = 0;
 
-      const cols = this.challenge.pairs <= 4 ? 4 : 5;
-      const cards = this.challenge.cards || [];
+      let cols;
+      if (layout.portrait) {
+        cols = cards.length <= 8 ? 2 : cards.length <= 12 ? 3 : 4;
+      } else {
+        cols = Math.min(5, Math.ceil(cards.length / 2));
+      }
 
-      cards.forEach((card, i) => {
-        const x = 480 - ((cols - 1) * 135) / 2 + (i % cols) * 135;
-        const y = 230 + Math.floor(i / cols) * 115;
+      const grid = window.AprincarLayout.grid(cards.length, {
+        left: stage.left,
+        top: stage.top + 8,
+        width: stage.width,
+        height: Math.max(240, stage.height - 16)
+      }, {
+        cols,
+        gapX: layout.portrait ? 10 : 14,
+        gapY: layout.portrait ? 10 : 12
+      });
 
-        const cardContainer = this.add.container(x, y);
+      cards.forEach((card, index) => {
+        const cell = grid.points[index];
+        const cardWidth = window.AprincarLayout.clamp(
+          cell.width * 0.88,
+          layout.touchTarget,
+          layout.portrait ? 128 : 132
+        );
+        const cardHeight = window.AprincarLayout.clamp(
+          cell.height * 0.86,
+          layout.touchTarget,
+          layout.portrait ? 112 : 106
+        );
 
-        // Verso da Carta (Madeira roxa com estrela dourada)
+        const cardContainer = this.add.container(cell.x, cell.y);
+
         const backGfx = this.add.graphics();
         backGfx.fillStyle(0x7c3aed, 1);
-        backGfx.fillRoundedRect(-58, -48, 116, 96, 12);
+        backGfx.fillRoundedRect(
+          -cardWidth / 2,
+          -cardHeight / 2,
+          cardWidth,
+          cardHeight,
+          12
+        );
         backGfx.lineStyle(3, 0xfbbf24, 0.85);
-        backGfx.strokeRoundedRect(-58, -48, 116, 96, 12);
-        const starIcon = this.add.text(0, 0, '★', { fontFamily: FONT, fontSize: '42px', fontStyle: 'bold', color: '#fbbf24' }).setOrigin(0.5);
+        backGfx.strokeRoundedRect(
+          -cardWidth / 2,
+          -cardHeight / 2,
+          cardWidth,
+          cardHeight,
+          12
+        );
 
-        // Frente da Carta (Branco com o animal)
+        const starIcon = this.add.text(0, 0, '★', {
+          fontFamily: FONT,
+          fontSize: `${Math.round(Math.min(cardWidth, cardHeight) * 0.42)}px`,
+          fontStyle: 'bold',
+          color: '#fbbf24'
+        }).setOrigin(0.5);
+
         const frontGfx = this.add.graphics();
         frontGfx.fillStyle(0xffffff, 1);
-        frontGfx.fillRoundedRect(-58, -48, 116, 96, 12);
+        frontGfx.fillRoundedRect(
+          -cardWidth / 2,
+          -cardHeight / 2,
+          cardWidth,
+          cardHeight,
+          12
+        );
         frontGfx.lineStyle(3, 0x10b981, 0.85);
-        frontGfx.strokeRoundedRect(-58, -48, 116, 96, 12);
-        const valueText = this.add.text(0, 0, card.value, { fontFamily: FONT, fontSize: '38px', fontStyle: 'bold', color: '#1e293b' }).setOrigin(0.5);
+        frontGfx.strokeRoundedRect(
+          -cardWidth / 2,
+          -cardHeight / 2,
+          cardWidth,
+          cardHeight,
+          12
+        );
+
+        const valueText = this.add.text(0, 0, card.value, {
+          fontFamily: FONT,
+          fontSize: `${Math.round(Math.min(cardWidth, cardHeight) * 0.40)}px`,
+          fontStyle: 'bold',
+          color: '#1e293b'
+        }).setOrigin(0.5);
+
         frontGfx.setVisible(false);
         valueText.setVisible(false);
 
-        const hitZone = this.add.rectangle(0, 0, 116, 96, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
+        const hitZone = this.add
+          .rectangle(0, 0, cardWidth, cardHeight, 0xffffff, 0.001)
+          .setInteractive({ useHandCursor: true });
+
         cardContainer.add([backGfx, starIcon, frontGfx, valueText, hitZone]);
         cardContainer.setData('card', card);
         cardContainer.setData('backGfx', backGfx);
@@ -52,7 +118,14 @@
         cardContainer.setData('valueText', valueText);
         this.roundGroup.add(cardContainer);
 
-        this.target(card.id, x, y, 116, 96, 'memory-card');
+        this.target(
+          card.id,
+          cell.x,
+          cell.y,
+          cardWidth,
+          cardHeight,
+          'memory-card'
+        );
 
         hitZone.on('pointerup', () => this.flipCard(cardContainer));
       });
@@ -60,15 +133,31 @@
       window.__APRINCAR_GAME_STATE__ = {
         mode: 'memory',
         variant: 'animals',
+        familyId: 'logic',
+        objective: window.APRINCAR_GAME_CONFIG.objective,
         level: this.level,
         challenge: this.challenge,
         targets: this.testTargets,
+        matchedPairs: 0,
+        moves: 0,
+        viewport: {
+          width: layout.width,
+          height: layout.height,
+          portrait: layout.portrait
+        },
+        attempts: this.attempts,
         inputReady: true
       };
     }
 
     flipCard(cardContainer) {
-      if (this.locked || cardContainer.getData('matched') || cardContainer.getData('open')) return;
+      if (
+        this.locked ||
+        cardContainer.getData('matched') ||
+        cardContainer.getData('open')
+      ) {
+        return;
+      }
 
       const backGfx = cardContainer.getData('backGfx');
       const starIcon = cardContainer.getData('starIcon');
@@ -77,7 +166,6 @@
 
       if (window.AprincarAudio) window.AprincarAudio.pop();
 
-      // Animação 3D de giro de carta (Flip tween)
       this.tweens.add({
         targets: cardContainer,
         scaleX: 0,
@@ -100,9 +188,9 @@
       this.memoryOpen.push(cardContainer);
       if (this.memoryOpen.length !== 2) return;
 
-      this.memoryMoves++;
+      this.memoryMoves += 1;
       this.locked = true;
-      this.updateState({ inputReady: false });
+      this.updateState({ inputReady: false, moves: this.memoryMoves });
 
       const [a, b] = this.memoryOpen;
       const same = a.getData('card').pairId === b.getData('card').pairId;
@@ -112,12 +200,18 @@
           if (window.AprincarAudio) window.AprincarAudio.chime();
           a.setData('matched', true);
           b.setData('matched', true);
-          this.memoryMatched++;
-          this.updateState({ matchedPairs: this.memoryMatched, moves: this.memoryMoves });
+          this.memoryMatched += 1;
+          this.updateState({
+            matchedPairs: this.memoryMatched,
+            moves: this.memoryMoves
+          });
 
           if (this.memoryMatched === this.challenge.pairs) {
             this.locked = false;
-            await this.submitResult(true, { moves: this.memoryMoves, pairs: this.challenge.pairs });
+            await this.submitResult(true, {
+              moves: this.memoryMoves,
+              pairs: this.challenge.pairs
+            });
           }
         } else {
           for (const card of [a, b]) {
@@ -131,13 +225,22 @@
                 card.getData('valueText').setVisible(false);
                 card.getData('backGfx').setVisible(true);
                 card.getData('starIcon').setVisible(true);
-                this.tweens.add({ targets: card, scaleX: 1, duration: 120 });
+                this.tweens.add({
+                  targets: card,
+                  scaleX: 1,
+                  duration: 120
+                });
               }
             });
           }
-          this.updateState({ lastResult: 'failure', moves: this.memoryMoves });
+
+          this.updateState({
+            lastResult: 'failure',
+            moves: this.memoryMoves
+          });
           await this.recordEvidence(false, { memoryMismatch: true });
         }
+
         this.memoryOpen = [];
         this.locked = false;
         this.updateState({ inputReady: true });
