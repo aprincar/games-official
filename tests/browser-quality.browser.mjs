@@ -288,8 +288,38 @@ await scenario('Torre de Blocos: drag pointer monta a torre e conclui', async ()
   });
 });
 
-await scenario('Mundo das Cores: erro de classificacao retorna e retry acerta', async () => {
-  await withGame('color-match', {}, async (page) => {
+await scenario('Familia Cores e Criacao: portrait mobile mantem alvos e desenho tocaveis', async () => {
+  for (const slug of ['color-match', 'paint-free']) {
+    await withGame(
+      slug,
+      { touch: true, viewport: { width: 390, height: 844, mobile: true } },
+      async (page) => {
+        const state = await page.state();
+        assert.equal(state.familyId, 'creative');
+        assert.equal(state.viewport.width, 390);
+        assert.equal(state.viewport.height, 844);
+        assert.equal(state.viewport.portrait, true);
+
+        const interactive = (state.targets || []).filter((target) =>
+          ['drag-source', 'drop-zone', 'palette-choice', 'draw-zone', 'action'].includes(target.kind)
+        );
+        assert.ok(interactive.length > 0, slug + ': nenhum alvo interativo publicado');
+
+        for (const target of interactive) {
+          assert.ok(target.w >= 52, slug + ': alvo estreito ' + target.kind + ' ' + target.value);
+          assert.ok(target.h >= 52, slug + ': alvo baixo ' + target.kind + ' ' + target.value);
+          assert.ok(target.x - target.w / 2 >= -1, slug + ': alvo saiu pela esquerda');
+          assert.ok(target.x + target.w / 2 <= 391, slug + ': alvo saiu pela direita');
+          assert.ok(target.y - target.h / 2 >= -1, slug + ': alvo saiu pelo topo');
+          assert.ok(target.y + target.h / 2 <= 845, slug + ': alvo saiu pela base');
+        }
+      }
+    );
+  }
+});
+
+await scenario('Mundo das Cores: touch drag erra, retorna e retry acerta', async () => {
+  await withGame('color-match', { touch: true, viewport: { width: 390, height: 844, mobile: true } }, async (page) => {
     let state = await page.state();
     const source = targetCenter(targetBy(state, 'drag-source', 'source'));
     const wrong = state.targets.find((target) =>
@@ -297,13 +327,13 @@ await scenario('Mundo das Cores: erro de classificacao retorna e retry acerta', 
     );
     assert.ok(wrong, 'color-match: drop-zone incorreta ausente');
 
-    await mouseDrag(page.client, source, targetCenter(wrong));
+    await touchDrag(page.client, source, targetCenter(wrong));
     await waitForResult(page, 'failure');
     await waitForInputReady(page);
     await delay(380);
 
     state = await page.state();
-    await mouseDrag(
+    await touchDrag(
       page.client,
       targetCenter(targetBy(state, 'drag-source', 'source')),
       targetCenter(targetBy(state, 'drop-zone', state.challenge.answer))
@@ -489,15 +519,27 @@ await scenario('Atelie de Letras: capability nao reconhecida gera falha recupera
   });
 });
 
-await scenario('Pintura Livre: desenho persiste no storage e produz evidence observado', async () => {
-  await withGame('paint-free', {}, async (page) => {
-    let state = await page.state();
-    const canvas = { x: 480, y: 345 };
-    await mouseDrag(page.client, { x: canvas.x - 120, y: canvas.y - 70 }, { x: canvas.x + 120, y: canvas.y + 75 }, 18);
+await scenario('Pintura Livre: touch desenho persiste no storage e produz evidence observado', async () => {
+  await withGame(
+    'paint-free',
+    { touch: true, viewport: { width: 390, height: 844, mobile: true } },
+    async (page) => {
+      let state = await page.state();
+      const zoneTarget = targetBy(state, 'draw-zone', 'paint-zone');
+      const zone = targetCenter(zoneTarget);
 
-    state = await page.state();
-    assert.ok(state.paintStrokeCount >= 1, 'paint-free: stroke nao foi registrado');
-    await mouseTap(page.client, targetCenter(targetBy(state, 'action', 'Guardar desenho')));
+      await touchDrag(
+        page.client,
+        { x: zone.x - zoneTarget.w * 0.30, y: zone.y - zoneTarget.h * 0.24 },
+        { x: zone.x + zoneTarget.w * 0.30, y: zone.y + zoneTarget.h * 0.24 },
+        18
+      );
+
+      state = await page.state();
+      assert.ok(state.paintStrokeCount >= 1, 'paint-free: stroke nao foi registrado');
+      assert.ok(zoneTarget.w >= 300);
+      assert.ok(zoneTarget.h >= 220);
+      await touchTap(page.client, targetCenter(targetBy(state, 'action', 'Guardar desenho')));
 
     await waitFor(async () => {
       const current = await page.state();
@@ -513,7 +555,8 @@ await scenario('Pintura Livre: desenho persiste no storage e produz evidence obs
     assert.equal(observed.attempts, 1);
     assert.equal(observed.independent, true);
     assert.equal(observed.assistance, 'none');
-  });
+    }
+  );
 });
 
 await scenario('Memoria dos Bichos: mismatch desbloqueia e todos os pares concluem', async () => {
