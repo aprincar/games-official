@@ -243,7 +243,7 @@ async function launchChrome() {
   };
 }
 
-async function createPage(debugPort, initSource) {
+async function createPage(debugPort, initSource, viewport = {}) {
   const response = await fetch(
     'http://127.0.0.1:' + debugPort + '/json/new?' + encodeURIComponent('about:blank'),
     { method: 'PUT' }
@@ -256,10 +256,10 @@ async function createPage(debugPort, initSource) {
   await client.send('Runtime.enable');
   await client.send('Log.enable');
   await client.send('Emulation.setDeviceMetricsOverride', {
-    width: 960,
-    height: 640,
-    deviceScaleFactor: 1,
-    mobile: false,
+    width: viewport.width ?? 960,
+    height: viewport.height ?? 640,
+    deviceScaleFactor: viewport.deviceScaleFactor ?? 1,
+    mobile: viewport.mobile ?? false,
   });
   await client.send('Page.addScriptToEvaluateOnNewDocument', { source: initSource });
   return { client, targetId: target.id };
@@ -276,7 +276,7 @@ export async function startBrowserHarness() {
   const chrome = await launchChrome();
 
   async function openGame(slug, options = {}) {
-    const page = await createPage(chrome.debugPort, hostPrelude(options));
+    const page = await createPage(chrome.debugPort, hostPrelude(options), options.viewport);
     const client = page.client;
     if (options.touch === true) {
       await client.send('Emulation.setTouchEmulationEnabled', {

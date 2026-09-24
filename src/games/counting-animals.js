@@ -7,46 +7,102 @@
     nextRound() {
       this.clearRound();
       this.levelText.setText(`Fase ${this.level}`);
+
       const seed = (Date.now() % 100000) + this.level * 97;
       const rng = createSeededRandom(seed);
-      this.challenge = generateCountingChallenge({ rng, seed, level: this.level, theme: 'animals' });
-      
-      this.promptText.setText('Conte os bichos e escolha a quantidade correta');
+      this.challenge = generateCountingChallenge({
+        rng,
+        seed,
+        level: this.level,
+        theme: 'animals'
+      });
 
-      // Backdrop da savana
-      const savannaBg = this.add.graphics();
-      savannaBg.fillStyle(0xfef3c7, 0.4);
-      savannaBg.fillRoundedRect(60, 160, 840, 260, 20);
-      savannaBg.lineStyle(2, 0xfde68a, 0.8);
-      savannaBg.strokeRoundedRect(60, 160, 840, 260, 20);
-      this.roundGroup.add(savannaBg);
-
+      const layout = this.layout;
+      const stage = layout.stage;
       const items = this.challenge.items || [];
-      this.tappedAnimals = 0;
       const count = items.length;
-      const cols = Math.min(5, Math.ceil(Math.sqrt(count)));
-      const rows = Math.ceil(count / cols);
       const animalType = ANIMAL_TYPES[(this.level - 1) % ANIMAL_TYPES.length];
 
-      items.forEach((_, i) => {
-        const x = 480 - ((cols - 1) * 110) / 2 + (i % cols) * 110;
-        const y = 235 + Math.floor(i / cols) * 95;
+      this.tappedAnimals = 0;
+      this.promptText.setText('Conte os bichos. Quantos tem aqui?');
 
-        const animalContainer = this.add.container(x, y);
+      const choiceHeight = Math.max(layout.touchTarget, 58);
+      const choiceTop = stage.bottom - choiceHeight - 8;
+      const animalArea = {
+        left: stage.left,
+        top: stage.top + 8,
+        width: stage.width,
+        height: Math.max(180, choiceTop - stage.top - 24),
+      };
+
+      const savannaBg = this.add.graphics();
+      savannaBg.fillStyle(0xfef3c7, 0.42);
+      savannaBg.fillRoundedRect(
+        animalArea.left,
+        animalArea.top,
+        animalArea.width,
+        animalArea.height,
+        20
+      );
+      savannaBg.lineStyle(2, 0xfde68a, 0.85);
+      savannaBg.strokeRoundedRect(
+        animalArea.left,
+        animalArea.top,
+        animalArea.width,
+        animalArea.height,
+        20
+      );
+      this.roundGroup.add(savannaBg);
+
+      const cols = window.AprincarLayout.columnsFor(
+        count,
+        layout,
+        layout.portrait ? 4 : 5
+      );
+      const grid = window.AprincarLayout.grid(count, animalArea, {
+        cols,
+        gapX: layout.portrait ? 8 : 14,
+        gapY: layout.portrait ? 8 : 12
+      });
+
+      items.forEach((_, index) => {
+        const cell = grid.points[index];
+        const visualSize = window.AprincarLayout.clamp(
+          Math.min(cell.width, cell.height) * 0.72,
+          52,
+          layout.portrait ? 76 : 88
+        );
+        const hitSize = Math.max(layout.touchTarget, visualSize + 10);
+
+        const animalContainer = this.add.container(cell.x, cell.y);
         const animalGfx = this.add.graphics();
-        window.AprincarVectorArt.drawAnimal(animalGfx, animalType, 0, 0, 72);
-        
-        // Touch hit area
-        const hitZone = this.add.circle(0, 0, 42, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
+        window.AprincarVectorArt.drawAnimal(
+          animalGfx,
+          animalType,
+          0,
+          0,
+          visualSize
+        );
+
+        const hitZone = this.add
+          .circle(0, 0, hitSize / 2, 0xffffff, 0.001)
+          .setInteractive({ useHandCursor: true });
+
         animalContainer.add([animalGfx, hitZone]);
         this.roundGroup.add(animalContainer);
-        this.target(`animal-${i + 1}`, x, y, 88, 88, 'animal');
+        this.target(
+          `animal-${index + 1}`,
+          cell.x,
+          cell.y,
+          hitSize,
+          hitSize,
+          'animal'
+        );
 
-        // Idle breathing tween
         this.tweens.add({
           targets: animalContainer,
-          scaleY: 1.05,
-          duration: 900 + (i % 3) * 150,
+          scaleY: 1.045,
+          duration: 900 + (index % 3) * 150,
           yoyo: true,
           repeat: -1,
           ease: 'Sine.easeInOut'
@@ -54,16 +110,36 @@
 
         hitZone.on('pointerdown', () => {
           if (this.locked) return;
+
           if (!animalContainer.getData('counted')) {
             animalContainer.setData('counted', true);
             this.tappedAnimals += 1;
-            this.add.text(x + 25, y - 28, String(this.tappedAnimals), { fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#166534', backgroundColor: '#dcfce7', padding: { x: 6, y: 3 } }).setOrigin(0.5);
-            this.updateState({ tappedAnimals: this.tappedAnimals, lastGesture: 'tap-animal' });
+
+            const badge = this.add.text(
+              cell.x + visualSize * 0.28,
+              cell.y - visualSize * 0.34,
+              String(this.tappedAnimals),
+              {
+                fontFamily: FONT,
+                fontSize: layout.portrait ? '17px' : '20px',
+                fontStyle: 'bold',
+                color: '#166534',
+                backgroundColor: '#dcfce7',
+                padding: { x: 5, y: 3 }
+              }
+            ).setOrigin(0.5);
+
+            this.roundGroup.add(badge);
+            this.updateState({
+              tappedAnimals: this.tappedAnimals,
+              lastGesture: 'tap-animal'
+            });
           }
+
           if (window.AprincarAudio) window.AprincarAudio.pop();
           this.tweens.add({
             targets: animalContainer,
-            scale: 1.25,
+            scale: 1.18,
             duration: 120,
             yoyo: true,
             ease: 'Back.easeOut'
@@ -71,20 +147,48 @@
         });
       });
 
-      // Opções numéricas
-      const optY = rows > 1 ? 485 : 455;
       const options = this.challenge.options || [count];
-      options.forEach((n, i) => {
-        const x = 480 + (i - (options.length - 1) / 2) * 125;
-        this.addCardButton(x, optY, 100, 72, String(n), n, C.white, 'choice');
+      const choiceBounds = {
+        left: stage.left,
+        top: choiceTop,
+        width: stage.width,
+        height: choiceHeight
+      };
+      const choices = window.AprincarLayout.row(options.length, choiceBounds, {
+        gap: layout.portrait ? 8 : 14,
+        minWidth: layout.touchTarget,
+        maxWidth: layout.portrait ? 82 : 108
+      });
+
+      options.forEach((value, index) => {
+        const slot = choices[index];
+        this.addCardButton(
+          slot.x,
+          slot.y,
+          slot.width,
+          choiceHeight,
+          String(value),
+          value,
+          C.white,
+          'choice'
+        );
       });
 
       window.__APRINCAR_GAME_STATE__ = {
         mode: 'counting',
         variant: 'animals',
+        familyId: 'quantities',
+        objective: window.APRINCAR_GAME_CONFIG.objective,
         level: this.level,
         challenge: this.challenge,
         targets: this.testTargets,
+        viewport: {
+          width: layout.width,
+          height: layout.height,
+          portrait: layout.portrait
+        },
+        tappedAnimals: this.tappedAnimals,
+        attempts: this.attempts,
         inputReady: true
       };
     }

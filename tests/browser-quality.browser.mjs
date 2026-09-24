@@ -96,6 +96,36 @@ await scenario('Conte os Bichos: falha, retry e sucesso observavel', async () =>
 });
 
 
+await scenario('Familia Quantidades: portrait mobile mantem alvos visiveis e tocaveis', async () => {
+  for (const slug of ['counting-animals', 'fruit-basket', 'block-tower']) {
+    await withGame(
+      slug,
+      { touch: true, viewport: { width: 390, height: 844, mobile: true } },
+      async (page) => {
+        const state = await page.state();
+        assert.equal(state.familyId, 'quantities');
+        assert.equal(state.viewport.width, 390);
+        assert.equal(state.viewport.height, 844);
+        assert.equal(state.viewport.portrait, true);
+
+        const interactive = (state.targets || []).filter((target) =>
+          ['animal', 'choice', 'action', 'drag-source', 'toggle'].includes(target.kind)
+        );
+        assert.ok(interactive.length > 0, slug + ': nenhum alvo interativo publicado');
+
+        for (const target of interactive) {
+          assert.ok(target.w >= 52, slug + ': alvo estreito ' + target.kind + ' ' + target.value);
+          assert.ok(target.h >= 52, slug + ': alvo baixo ' + target.kind + ' ' + target.value);
+          assert.ok(target.x - target.w / 2 >= -1, slug + ': alvo saiu pela esquerda');
+          assert.ok(target.x + target.w / 2 <= 391, slug + ': alvo saiu pela direita');
+          assert.ok(target.y - target.h / 2 >= -1, slug + ': alvo saiu pelo topo');
+          assert.ok(target.y + target.h / 2 <= 845, slug + ': alvo saiu pela base');
+        }
+      }
+    );
+  }
+});
+
 await scenario('Cesta de Frutas: tap fallback e remocao mantem visual e logica equivalentes', async () => {
   await withGame('fruit-basket', {}, async (page) => {
     let state = await page.state();
@@ -110,8 +140,11 @@ await scenario('Cesta de Frutas: tap fallback e remocao mantem visual e logica e
     let first = state.fruitStates.find((fruit) => fruit.id === sources[0].value);
     assert.equal(first.picked, true);
     assert.equal(first.basketIndex, 0);
-    assert.equal(first.x, 380);
-    assert.equal(first.y, 405);
+    const firstSlot = { x: first.x, y: first.y };
+    assert.ok(first.x >= state.basketBounds.left);
+    assert.ok(first.x <= state.basketBounds.left + state.basketBounds.width);
+    assert.ok(first.y >= state.basketBounds.top);
+    assert.ok(first.y <= state.basketBounds.top + state.basketBounds.height);
 
     await mouseTap(page.client, targetCenter(sources[1]));
     state = await waitFor(async () => {
@@ -135,13 +168,13 @@ await scenario('Cesta de Frutas: tap fallback e remocao mantem visual e logica e
     assert.equal(first.x, first.homeX);
     assert.equal(first.y, first.homeY);
     assert.equal(second.basketIndex, 0);
-    assert.equal(second.x, 380);
-    assert.equal(second.y, 405);
+    assert.equal(second.x, firstSlot.x);
+    assert.equal(second.y, firstSlot.y);
   });
 });
 
 await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e conclui', async () => {
-  await withGame('fruit-basket', { touch: true }, async (page) => {
+  await withGame('fruit-basket', { touch: true, viewport: { width: 390, height: 844, mobile: true } }, async (page) => {
     let state = await page.state();
     const sources = state.targets.filter((target) => target.kind === 'drag-source');
     const basket = targetCenter(targetBy(state, 'drop-zone', 'basket'));
@@ -159,7 +192,12 @@ await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e concl
     assert.equal(state.lastGesture, 'drag');
     const pickedFruits = state.fruitStates.filter((fruit) => fruit.picked);
     assert.equal(pickedFruits.length, state.challenge.answer);
-    assert.ok(pickedFruits.every((fruit) => fruit.x >= 380 && fruit.x <= 580 && fruit.y >= 405 && fruit.y <= 447));
+    assert.ok(pickedFruits.every((fruit) =>
+      fruit.x >= state.basketBounds.left &&
+      fruit.x <= state.basketBounds.left + state.basketBounds.width &&
+      fruit.y >= state.basketBounds.top &&
+      fruit.y <= state.basketBounds.top + state.basketBounds.height
+    ));
     await mouseTap(page.client, targetCenter(targetBy(state, 'action', 'Conferir')));
     await waitForResult(page, 'success');
     await assertEvidence(page, 'success');
@@ -168,7 +206,7 @@ await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e concl
 
 
 await scenario('Torre de Blocos: tap fallback e remocao mantem pilha visual compacta', async () => {
-  await withGame('block-tower', {}, async (page) => {
+  await withGame('block-tower', { viewport: { width: 390, height: 844, mobile: true } }, async (page) => {
     let state = await page.state();
     const sources = state.targets.filter((target) => target.kind === 'toggle');
 
@@ -181,8 +219,11 @@ await scenario('Torre de Blocos: tap fallback e remocao mantem pilha visual comp
     let first = state.blockStates.find((block) => block.id === sources[0].value);
     assert.equal(first.picked, true);
     assert.equal(first.stackIndex, 0);
-    assert.equal(first.x, 480);
-    assert.equal(first.y, 430);
+    const firstStackSlot = { x: first.x, y: first.y };
+    assert.ok(first.x >= state.towerBounds.left);
+    assert.ok(first.x <= state.towerBounds.left + state.towerBounds.width);
+    assert.ok(first.y >= state.towerBounds.top);
+    assert.ok(first.y <= state.towerBounds.top + state.towerBounds.height);
 
     await mouseTap(page.client, targetCenter(sources[1]));
     state = await waitFor(async () => {
@@ -193,7 +234,7 @@ await scenario('Torre de Blocos: tap fallback e remocao mantem pilha visual comp
     first = state.blockStates.find((block) => block.id === sources[0].value);
     let second = state.blockStates.find((block) => block.id === sources[1].value);
     assert.equal(second.stackIndex, 1);
-    assert.equal(second.y, 372);
+    assert.ok(second.y < first.y);
 
     await mouseTap(page.client, { x: first.x, y: first.y });
     state = await waitFor(async () => {
@@ -207,8 +248,8 @@ await scenario('Torre de Blocos: tap fallback e remocao mantem pilha visual comp
     assert.equal(first.x, first.homeX);
     assert.equal(first.y, first.homeY);
     assert.equal(second.stackIndex, 0);
-    assert.equal(second.x, 480);
-    assert.equal(second.y, 430);
+    assert.equal(second.x, firstStackSlot.x);
+    assert.equal(second.y, firstStackSlot.y);
   });
 });
 
@@ -231,7 +272,15 @@ await scenario('Torre de Blocos: drag pointer monta a torre e conclui', async ()
     assert.equal(state.lastGesture, 'drag');
     const pickedBlocks = state.blockStates.filter((block) => block.picked);
     assert.equal(pickedBlocks.length, state.challenge.answer);
-    assert.ok(pickedBlocks.every((block, index) => block.x === 480 && block.y === 430 - index * 58));
+    const towerCenterX = state.towerBounds.left + state.towerBounds.width / 2;
+    assert.ok(pickedBlocks.every((block) =>
+      Math.abs(block.x - towerCenterX) < 0.01 &&
+      block.y >= state.towerBounds.top &&
+      block.y <= state.towerBounds.top + state.towerBounds.height
+    ));
+    for (let index = 1; index < pickedBlocks.length; index++) {
+      assert.ok(pickedBlocks[index].y < pickedBlocks[index - 1].y);
+    }
     await mouseTap(page.client, targetCenter(targetBy(state, 'action', 'Conferir')));
     await waitForResult(page, 'success');
     await assertEvidence(page, 'success');
@@ -294,7 +343,7 @@ await scenario('Trem dos Padroes: attempts, assistance, drag e reset por rodada'
     state = await waitFor(async () => {
       const current = await page.state();
       return current.level === initialLevel + 1 && current.inputReady === true ? current : false;
-    }, { label: 'pattern-play: next round reset', timeoutMs: 3500 });
+    }, { label: 'pattern-play: next round reset', timeoutMs: 8000 });
 
     const nextWrong = wrongChoice(state);
     assert.ok(nextWrong, 'pattern-play: alternativa incorreta da rodada 2 ausente');

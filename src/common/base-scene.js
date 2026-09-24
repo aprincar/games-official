@@ -3,7 +3,18 @@
   const CFG = window.APRINCAR_GAME_CONFIG;
   const BRAND = window.APRINCAR_BRAND;
   const FONT = BRAND.fontFamily;
-  const C = { bg: 0xf7f6f2, purple: 0x8b5cf6, blue: 0x2563eb, coral: 0xf43f5e, orange: 0xfb923c, sun: 0xfbcb24, leaf: 0x22c55e, sky: 0x38bdf8, ink: '#13203d', white: 0xffffff };
+  const C = {
+    bg: 0xf7f6f2,
+    purple: 0x8b5cf6,
+    blue: 0x2563eb,
+    coral: 0xf43f5e,
+    orange: 0xfb923c,
+    sun: 0xfbcb24,
+    leaf: 0x22c55e,
+    sky: 0x38bdf8,
+    ink: '#13203d',
+    white: 0xffffff
+  };
 
   class AprincarBaseScene extends Phaser.Scene {
     constructor(sceneKey = 'main') {
@@ -15,26 +26,101 @@
       this.stars = 0;
       this.testTargets = [];
       this.challenge = null;
+      this.mobileFirst = CFG.mobileFirst === true;
     }
 
     async create() {
       this.cameras.main.setBackgroundColor(C.bg);
-      
-      // Header decorativo
-      this.add.rectangle(480, 50, 960, 100, C.white).setStrokeStyle(1, 0xe2dfd7);
-      BRAND.addPhaser(this, 22, 16);
-      this.titleText = this.add.text(480, 18, CFG.name, { fontFamily: FONT, fontSize: '26px', fontStyle: 'bold', color: C.ink }).setOrigin(0.5, 0);
-      this.levelText = this.add.text(910, 26, 'Fase 1', { fontFamily: FONT, fontSize: '18px', fontStyle: 'bold', color: '#6f5bd7' }).setOrigin(1, 0);
-      
-      // Instrução principal
-      this.promptText = this.add.text(480, 114, '', { fontFamily: FONT, fontSize: '28px', fontStyle: 'bold', color: C.ink, align: 'center', wordWrap: { width: 840 } }).setOrigin(0.5, 0);
-      
-      // Rodapé
-      this.statusText = this.add.text(480, 580, '', { fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#5143a6' }).setOrigin(0.5);
-      this.starText = this.add.text(32, 574, '⭐ 0', { fontFamily: FONT, fontSize: '22px', fontStyle: 'bold', color: '#6f5bd7' });
+      this.createChrome();
+
+      if (this.mobileFirst) {
+        this.scale.on('resize', () => {
+          this.layoutChrome();
+          if (typeof this.onViewportResize === 'function') this.onViewportResize();
+        });
+      }
 
       await aprincar.session.start({ mode: CFG.mode });
       this.nextRound();
+    }
+
+    createChrome() {
+      this.headerBackground = this.add.rectangle(0, 0, 1, 1, C.white).setStrokeStyle(1, 0xe2dfd7);
+      BRAND.addPhaser(this, this.mobileFirst ? 14 : 22, this.mobileFirst ? 14 : 16);
+
+      this.titleText = this.add.text(0, 0, CFG.name, {
+        fontFamily: FONT,
+        fontSize: this.mobileFirst ? '20px' : '26px',
+        fontStyle: 'bold',
+        color: C.ink,
+        align: 'center'
+      }).setOrigin(0.5, 0);
+
+      this.levelText = this.add.text(0, 0, 'Fase 1', {
+        fontFamily: FONT,
+        fontSize: this.mobileFirst ? '15px' : '18px',
+        fontStyle: 'bold',
+        color: '#6f5bd7'
+      }).setOrigin(1, 0);
+
+      this.promptText = this.add.text(0, 0, '', {
+        fontFamily: FONT,
+        fontSize: this.mobileFirst ? '23px' : '28px',
+        fontStyle: 'bold',
+        color: C.ink,
+        align: 'center'
+      }).setOrigin(0.5, 0);
+
+      this.statusText = this.add.text(0, 0, '', {
+        fontFamily: FONT,
+        fontSize: this.mobileFirst ? '17px' : '22px',
+        fontStyle: 'bold',
+        color: '#5143a6',
+        align: 'center'
+      }).setOrigin(0.5);
+
+      this.starText = this.add.text(0, 0, '⭐ 0', {
+        fontFamily: FONT,
+        fontSize: this.mobileFirst ? '17px' : '22px',
+        fontStyle: 'bold',
+        color: '#6f5bd7'
+      });
+
+      this.layoutChrome();
+    }
+
+    layoutChrome() {
+      if (!this.mobileFirst) {
+        this.headerBackground.setPosition(480, 50).setSize(960, 100);
+        this.titleText.setPosition(480, 18).setWordWrapWidth(560);
+        this.levelText.setPosition(910, 26);
+        this.promptText.setPosition(480, 114).setWordWrapWidth(840);
+        this.statusText.setPosition(480, 580).setWordWrapWidth(720);
+        this.starText.setPosition(32, 574);
+        return;
+      }
+
+      const layout = window.AprincarLayout.metrics(this);
+      this.layout = layout;
+      this.headerBackground
+        .setPosition(layout.header.x, layout.header.y)
+        .setSize(layout.header.width, layout.header.height);
+
+      const titleWidth = Math.max(120, layout.width - 170);
+      this.titleText
+        .setPosition(layout.width / 2, 14)
+        .setWordWrapWidth(titleWidth);
+
+      this.levelText.setPosition(layout.width - layout.padding, 18);
+      this.promptText
+        .setPosition(layout.prompt.x, layout.prompt.y)
+        .setWordWrapWidth(layout.prompt.width);
+
+      this.statusText
+        .setPosition(layout.footer.x, layout.height - 34)
+        .setWordWrapWidth(Math.max(160, layout.footer.width - 110));
+
+      this.starText.setPosition(layout.padding, layout.height - 42);
     }
 
     updateState(values = {}) {
@@ -57,6 +143,7 @@
       this.consecutiveFailures = 0;
       this.testTargets = [];
       this.challenge = null;
+      if (this.mobileFirst) this.layout = window.AprincarLayout.metrics(this);
     }
 
     target(value, x, y, w, h, kind) {
@@ -64,8 +151,24 @@
     }
 
     addCardButton(x, y, w, h, label, value, color = C.white, kind = 'action') {
-      const box = this.add.rectangle(x, y, w, h, color).setStrokeStyle(2, 0xe2dfd7).setInteractive({ useHandCursor: true });
-      const text = this.add.text(x, y, label, { fontFamily: FONT, fontSize: `${Math.min(34, h * 0.44)}px`, fontStyle: 'bold', color: color === C.white ? C.ink : '#ffffff' }).setOrigin(0.5);
+      if (this.mobileFirst) {
+        const minimum = this.layout?.touchTarget ?? 52;
+        w = Math.max(w, minimum);
+        h = Math.max(h, minimum);
+      }
+
+      const box = this.add.rectangle(x, y, w, h, color)
+        .setStrokeStyle(2, 0xe2dfd7)
+        .setInteractive({ useHandCursor: true });
+
+      const text = this.add.text(x, y, label, {
+        fontFamily: FONT,
+        fontSize: `${Math.min(this.mobileFirst ? 28 : 34, h * 0.44)}px`,
+        fontStyle: 'bold',
+        color: color === C.white ? C.ink : '#ffffff',
+        align: 'center'
+      }).setOrigin(0.5);
+
       this.roundGroup.add([box, text]);
       this.target(kind === 'action' ? label : value, x, y, w, h, kind);
       box.on('pointerup', () => this.choose(value, box));
@@ -74,7 +177,11 @@
 
     choose(value, source) {
       if (this.locked) return;
-      this.submitResult(value === this.challenge.answer, { selected: value, target: this.challenge.answer, sourceX: source?.x });
+      this.submitResult(value === this.challenge.answer, {
+        selected: value,
+        target: this.challenge.answer,
+        sourceX: source?.x
+      });
     }
 
     async recordOutcome(result, metadata = {}, options = {}) {
@@ -123,7 +230,11 @@
       if (ok) {
         this.stars += 2;
         this.starText.setText(`⭐ ${this.stars}`);
-        if (window.AprincarFeedback) window.AprincarFeedback.celebrate(this, 480, 320);
+        if (window.AprincarFeedback) {
+          const centerX = this.mobileFirst ? this.layout.stage.centerX : 480;
+          const centerY = this.mobileFirst ? this.layout.stage.centerY : 320;
+          window.AprincarFeedback.celebrate(this, centerX, centerY);
+        }
         await aprincar.rewards.request({ reason: `${CFG.mode}-round`, amount: 2 });
         this.time.delayedCall(800, () => {
           this.level++;
@@ -133,10 +244,11 @@
         if (window.AprincarAudio) window.AprincarAudio.softError();
         this.locked = false;
         this.updateState({ inputReady: true });
-        
-        // Assistência progressiva suave se errar repetidamente
+
         if (this.consecutiveFailures >= 2) {
-          const correctTarget = this.testTargets.find(t => t.kind === 'choice' && t.value === this.challenge?.answer);
+          const correctTarget = this.testTargets.find(
+            (target) => target.kind === 'choice' && target.value === this.challenge?.answer
+          );
           if (correctTarget && window.AprincarFeedback) {
             window.AprincarFeedback.showAssistanceHint(this, correctTarget);
           }
