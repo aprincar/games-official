@@ -51,12 +51,24 @@ function wrongChoice(state) {
   );
 }
 
+async function evidencePayloads(page) {
+  const host = await page.host();
+  return host.events
+    .filter((event) => event.type === 'evidence.submit' && event.payload)
+    .map((event) => event.payload);
+}
+
+async function waitForEvidenceCount(page, count) {
+  return waitFor(async () => {
+    const payloads = await evidencePayloads(page);
+    return payloads.length >= count ? payloads : false;
+  }, { label: page.slug + ': evidence count=' + count });
+}
+
 async function assertEvidence(page, result) {
   await waitFor(async () => {
-    const host = await page.host();
-    return host.events.some((event) =>
-      event.type === 'evidence.submit' && event.payload && event.payload.result === result
-    );
+    const payloads = await evidencePayloads(page);
+    return payloads.some((payload) => payload.result === result);
   }, { label: page.slug + ': evidence ' + result });
 }
 
@@ -83,6 +95,51 @@ await scenario('Conte os Bichos: falha, retry e sucesso observavel', async () =>
   });
 });
 
+
+await scenario('Cesta de Frutas: tap fallback e remocao mantem visual e logica equivalentes', async () => {
+  await withGame('fruit-basket', {}, async (page) => {
+    let state = await page.state();
+    const sources = state.targets.filter((target) => target.kind === 'toggle');
+
+    await mouseTap(page.client, targetCenter(sources[0]));
+    state = await waitFor(async () => {
+      const current = await page.state();
+      return current.selectedCount === 1 ? current : false;
+    }, { label: 'fruit-basket: tap selectedCount=1' });
+
+    let first = state.fruitStates.find((fruit) => fruit.id === sources[0].value);
+    assert.equal(first.picked, true);
+    assert.equal(first.basketIndex, 0);
+    assert.equal(first.x, 380);
+    assert.equal(first.y, 405);
+
+    await mouseTap(page.client, targetCenter(sources[1]));
+    state = await waitFor(async () => {
+      const current = await page.state();
+      return current.selectedCount === 2 ? current : false;
+    }, { label: 'fruit-basket: tap selectedCount=2' });
+
+    first = state.fruitStates.find((fruit) => fruit.id === sources[0].value);
+    let second = state.fruitStates.find((fruit) => fruit.id === sources[1].value);
+    assert.equal(second.basketIndex, 1);
+
+    await mouseTap(page.client, { x: first.x, y: first.y });
+    state = await waitFor(async () => {
+      const current = await page.state();
+      return current.selectedCount === 1 ? current : false;
+    }, { label: 'fruit-basket: tap remove compacts basket' });
+
+    first = state.fruitStates.find((fruit) => fruit.id === sources[0].value);
+    second = state.fruitStates.find((fruit) => fruit.id === sources[1].value);
+    assert.equal(first.picked, false);
+    assert.equal(first.x, first.homeX);
+    assert.equal(first.y, first.homeY);
+    assert.equal(second.basketIndex, 0);
+    assert.equal(second.x, 380);
+    assert.equal(second.y, 405);
+  });
+});
+
 await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e conclui', async () => {
   await withGame('fruit-basket', { touch: true }, async (page) => {
     let state = await page.state();
@@ -100,9 +157,58 @@ await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e concl
 
     state = await page.state();
     assert.equal(state.lastGesture, 'drag');
+    const pickedFruits = state.fruitStates.filter((fruit) => fruit.picked);
+    assert.equal(pickedFruits.length, state.challenge.answer);
+    assert.ok(pickedFruits.every((fruit) => fruit.x >= 380 && fruit.x <= 580 && fruit.y >= 405 && fruit.y <= 447));
     await mouseTap(page.client, targetCenter(targetBy(state, 'action', 'Conferir')));
     await waitForResult(page, 'success');
     await assertEvidence(page, 'success');
+  });
+});
+
+
+await scenario('Torre de Blocos: tap fallback e remocao mantem pilha visual compacta', async () => {
+  await withGame('block-tower', {}, async (page) => {
+    let state = await page.state();
+    const sources = state.targets.filter((target) => target.kind === 'toggle');
+
+    await mouseTap(page.client, targetCenter(sources[0]));
+    state = await waitFor(async () => {
+      const current = await page.state();
+      return current.stackHeight === 1 ? current : false;
+    }, { label: 'block-tower: tap stackHeight=1' });
+
+    let first = state.blockStates.find((block) => block.id === sources[0].value);
+    assert.equal(first.picked, true);
+    assert.equal(first.stackIndex, 0);
+    assert.equal(first.x, 480);
+    assert.equal(first.y, 430);
+
+    await mouseTap(page.client, targetCenter(sources[1]));
+    state = await waitFor(async () => {
+      const current = await page.state();
+      return current.stackHeight === 2 ? current : false;
+    }, { label: 'block-tower: tap stackHeight=2' });
+
+    first = state.blockStates.find((block) => block.id === sources[0].value);
+    let second = state.blockStates.find((block) => block.id === sources[1].value);
+    assert.equal(second.stackIndex, 1);
+    assert.equal(second.y, 372);
+
+    await mouseTap(page.client, { x: first.x, y: first.y });
+    state = await waitFor(async () => {
+      const current = await page.state();
+      return current.stackHeight === 1 ? current : false;
+    }, { label: 'block-tower: tap remove compacts stack' });
+
+    first = state.blockStates.find((block) => block.id === sources[0].value);
+    second = state.blockStates.find((block) => block.id === sources[1].value);
+    assert.equal(first.picked, false);
+    assert.equal(first.x, first.homeX);
+    assert.equal(first.y, first.homeY);
+    assert.equal(second.stackIndex, 0);
+    assert.equal(second.x, 480);
+    assert.equal(second.y, 430);
   });
 });
 
@@ -123,6 +229,9 @@ await scenario('Torre de Blocos: drag pointer monta a torre e conclui', async ()
 
     state = await page.state();
     assert.equal(state.lastGesture, 'drag');
+    const pickedBlocks = state.blockStates.filter((block) => block.picked);
+    assert.equal(pickedBlocks.length, state.challenge.answer);
+    assert.ok(pickedBlocks.every((block, index) => block.x === 480 && block.y === 430 - index * 58));
     await mouseTap(page.client, targetCenter(targetBy(state, 'action', 'Conferir')));
     await waitForResult(page, 'success');
     await assertEvidence(page, 'success');
@@ -155,20 +264,46 @@ await scenario('Mundo das Cores: erro de classificacao retorna e retry acerta', 
   });
 });
 
-await scenario('Trem dos Padroes: alternativa errada permite retry e acerto', async () => {
+await scenario('Trem dos Padroes: attempts, assistance, drag e reset por rodada', async () => {
   await withGame('pattern-play', {}, async (page) => {
     let state = await page.state();
+    const initialLevel = state.level;
     const wrong = wrongChoice(state);
     assert.ok(wrong, 'pattern-play: alternativa incorreta ausente');
+
     await mouseTap(page.client, targetCenter(wrong));
-    await waitForResult(page, 'failure');
+    await waitForEvidenceCount(page, 1);
+    await waitForInputReady(page);
+
+    await mouseTap(page.client, targetCenter(wrong));
+    await waitForEvidenceCount(page, 2);
     await waitForInputReady(page);
 
     state = await page.state();
-    await mouseTap(page.client, choiceTarget(state, state.challenge.answer));
+    const correctToken = targetBy(state, 'drag-source', state.challenge.answer);
+    const slot = targetBy(state, 'drop-zone', 'pattern-slot');
+    await mouseDrag(page.client, targetCenter(correctToken), targetCenter(slot));
     await waitForResult(page, 'success');
-    await assertEvidence(page, 'failure');
-    await assertEvidence(page, 'success');
+    let evidence = await waitForEvidenceCount(page, 3);
+
+    assert.deepEqual(evidence.slice(0, 3).map((item) => item.attempts), [1, 2, 3]);
+    assert.deepEqual(evidence.slice(0, 3).map((item) => item.independent), [true, false, false]);
+    assert.deepEqual(evidence.slice(0, 3).map((item) => item.assistance), ['none', 'none', 'visual-cue']);
+    assert.equal((await page.state()).lastGesture, 'drag');
+
+    state = await waitFor(async () => {
+      const current = await page.state();
+      return current.level === initialLevel + 1 && current.inputReady === true ? current : false;
+    }, { label: 'pattern-play: next round reset', timeoutMs: 3500 });
+
+    const nextWrong = wrongChoice(state);
+    assert.ok(nextWrong, 'pattern-play: alternativa incorreta da rodada 2 ausente');
+    await mouseTap(page.client, targetCenter(nextWrong));
+    evidence = await waitForEvidenceCount(page, 4);
+
+    assert.equal(evidence[3].attempts, 1);
+    assert.equal(evidence[3].independent, true);
+    assert.equal(evidence[3].assistance, 'none');
   });
 });
 
@@ -239,6 +374,11 @@ await scenario('Pintura Livre: desenho persiste no storage e produz evidence obs
     assert.ok(host.storage['paint:last'], 'paint-free: storage paint:last ausente');
     assert.ok(Array.isArray(host.storage['paint:last'].strokes));
     await assertEvidence(page, 'observed');
+    const evidence = await evidencePayloads(page);
+    const observed = evidence.find((payload) => payload.result === 'observed');
+    assert.equal(observed.attempts, 1);
+    assert.equal(observed.independent, true);
+    assert.equal(observed.assistance, 'none');
   });
 });
 
@@ -285,7 +425,7 @@ await scenario('Memoria dos Bichos: mismatch desbloqueia e todos os pares conclu
   });
 });
 
-await scenario('Formas no Espaco 3D: drag para observar e tap correto conclui', async () => {
+await scenario('Formas no Espaco 3D: attempts, assistance, lock e retry coerentes', async () => {
   await withGame('space-shapes-3d', {}, async (page) => {
     await mouseDrag(page.client, { x: 420, y: 340 }, { x: 540, y: 340 }, 10);
     let state = await waitFor(async () => {
@@ -293,11 +433,27 @@ await scenario('Formas no Espaco 3D: drag para observar e tap correto conclui', 
       return current.lastGesture === 'drag' ? current : false;
     }, { label: 'space-shapes-3d: drag' });
 
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const wrong = state.targets.find((candidate) => candidate.value !== state.challenge.answer);
+      assert.ok(wrong, 'space-shapes-3d: target incorreto ausente');
+      await mouseTap(page.client, targetCenter(wrong));
+      await waitForEvidenceCount(page, attempt);
+      state = await waitFor(async () => {
+        const current = await page.state();
+        return current.lastResult === 'failure' && current.inputReady === true ? current : false;
+      }, { label: 'space-shapes-3d: retry ' + attempt });
+    }
+
+    assert.equal(state.assistance, 'visual-cue');
     const target = state.targets.find((candidate) => candidate.value === state.challenge.answer);
     assert.ok(target, 'space-shapes-3d: target correto ausente');
     await mouseTap(page.client, targetCenter(target));
     await waitForResult(page, 'success');
-    await assertEvidence(page, 'success');
+    const evidence = await waitForEvidenceCount(page, 3);
+
+    assert.deepEqual(evidence.slice(0, 3).map((item) => item.attempts), [1, 2, 3]);
+    assert.deepEqual(evidence.slice(0, 3).map((item) => item.independent), [true, false, false]);
+    assert.deepEqual(evidence.slice(0, 3).map((item) => item.assistance), ['none', 'none', 'visual-cue']);
   });
 });
 

@@ -6,6 +6,7 @@
   class HandwritingScene extends window.AprincarBaseScene {
     nextRound() {
       this.clearRound();
+      this.pendingEvaluation = false;
       this.levelText.setText(`Fase ${this.level}`);
       const seed = (Date.now() % 100000) + this.level * 97;
       const rng = createSeededRandom(seed);
@@ -57,6 +58,7 @@
       let previous = null;
 
       zone.on('pointerdown', p => {
+        if (this.locked || this.pendingEvaluation) return;
         current = [];
         previous = { x: p.x, y: p.y };
         this.strokes.push(current);
@@ -65,7 +67,7 @@
       });
 
       zone.on('pointermove', p => {
-        if (!p.isDown || !current || !previous) return;
+        if (this.locked || this.pendingEvaluation || !p.isDown || !current || !previous) return;
         const point = this.normPoint(p, zone);
         if (current.length < 220) current.push(point);
         this.handwritingGraphics.lineBetween(previous.x, previous.y, p.x, p.y);
@@ -82,15 +84,26 @@
       const check = this.addCardButton(660, 560, 200, 60, 'Conferir', '__check__', C.sun, 'action');
       check.removeAllListeners('pointerup');
       check.on('pointerup', async () => {
-        const result = await aprincar.capability.request('handwriting.evaluate', {
-          symbol: this.challenge.answer,
-          strokes: this.strokes
-        });
-        await this.submitResult(!!result?.recognized, {
-          handwriting: result,
-          symbol: this.challenge.answer,
-          guideAlpha
-        });
+        if (this.locked || this.pendingEvaluation) return;
+
+        this.pendingEvaluation = true;
+        this.updateState({ inputReady: false });
+        try {
+          const result = await aprincar.capability.request('handwriting.evaluate', {
+            symbol: this.challenge.answer,
+            strokes: this.strokes
+          });
+          this.pendingEvaluation = false;
+          await this.submitResult(!!result?.recognized, {
+            handwriting: result,
+            symbol: this.challenge.answer,
+            guideAlpha
+          });
+        } catch (error) {
+          this.pendingEvaluation = false;
+          this.updateState({ inputReady: true });
+          throw error;
+        }
       });
 
       window.__APRINCAR_GAME_STATE__ = {

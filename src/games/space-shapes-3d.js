@@ -27,6 +27,8 @@
   let level = 1;
   let answer = '';
   let locked = false;
+  let attempts = 0;
+  let consecutiveFailures = 0;
   let downPoint, lastPoint;
   let dragging = false;
 
@@ -62,7 +64,8 @@
           normalized: { x: (p.x + 1) / 2, y: 1 - (p.y + 1) / 2 }
         };
       }),
-      inputReady: true,
+      inputReady: !locked,
+      attempts,
       ...values
     };
   }
@@ -76,6 +79,8 @@
     });
     objects = [];
     locked = false;
+    attempts = 0;
+    consecutiveFailures = 0;
     document.getElementById('three-level').textContent = `Fase ${level}`;
     const seed = (Date.now() % 100000) + level * 131;
     const rng = createSeededRandom(seed);
@@ -102,12 +107,32 @@
     publish({ seed });
   }
 
+  function showAnswerHint() {
+    const correct = objects.find(object => object.userData.id === answer);
+    if (!correct) return;
+    correct.material.emissive.setHex(0xfbbf24);
+    correct.material.emissiveIntensity = 0.45;
+    correct.scale.setScalar(1.08);
+    document.getElementById('three-status').textContent = 'Dica: a forma certa está brilhando.';
+  }
+
   async function choose(mesh) {
     if (locked) return;
-    locked = true;
+
+    const failuresBeforeAttempt = consecutiveFailures;
+    const assistance = failuresBeforeAttempt >= 2 ? 'visual-cue' : 'none';
+    const independent = failuresBeforeAttempt === 0;
     const ok = mesh.userData.id === answer;
-    document.getElementById('three-status').textContent = ok ? 'Isso! Você reconheceu a forma ✨' : 'Quase! Gire e observe de novo.';
-    publish({ lastResult: ok ? 'success' : 'failure' });
+
+    locked = true;
+    attempts += 1;
+    document.getElementById('three-status').textContent =
+      ok ? 'Isso! Você reconheceu a forma ✨' : 'Quase! Gire e observe de novo.';
+    publish({
+      lastResult: ok ? 'success' : 'failure',
+      assistance,
+      independent
+    });
 
     if (window.AprincarAudio) {
       if (ok) window.AprincarAudio.success();
@@ -117,22 +142,30 @@
     await aprincar.evidence.submit({
       skillId: CFG.skillId,
       result: ok ? 'success' : 'failure',
-      independent: true,
-      assistance: 'none',
+      independent,
+      assistance,
       difficulty: Math.min(1, 0.25 + level * 0.045),
-      confidence: 0.9,
-      attempts: 1,
+      confidence: ok ? 0.95 : 0.8,
+      attempts,
       metadata: { level, target: answer, selected: mesh.userData.id }
     });
 
     if (ok) {
+      consecutiveFailures = 0;
       await aprincar.rewards.request({ reason: 'geometry-3d', amount: 2 });
       setTimeout(() => {
         level++;
         round();
       }, 850);
     } else {
+      consecutiveFailures += 1;
       locked = false;
+      if (consecutiveFailures >= 2) showAnswerHint();
+      publish({
+        lastResult: 'failure',
+        assistance: consecutiveFailures >= 2 ? 'visual-cue' : 'none',
+        independent: false
+      });
     }
   }
 

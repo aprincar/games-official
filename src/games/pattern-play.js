@@ -69,14 +69,40 @@
         const token = this.add.circle(x, 405, 30, PALETTE[colorIdx]).setInteractive({ draggable: true, useHandCursor: true });
         const tokenText = this.add.text(x, 405, t, { fontFamily: FONT, fontSize: '28px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5);
         this.roundGroup.add([token, tokenText]);
-        this.input.setDraggable(token);
         this.target(t, x, 405, 64, 64, 'drag-source');
-        token.on('drag', (_pointer, _object, dragX, dragY) => { token.x = dragX; token.y = dragY; tokenText.x = dragX; tokenText.y = dragY; });
-        token.on('dragend', () => {
-          const inSlot = Math.abs(token.x - targetX) < 70 && Math.abs(token.y - targetY) < 60;
-          if (inSlot) this.submitResult(t === this.challenge.answer, { selected: t, target: this.challenge.answer, interaction: 'drag' });
-          else { token.x = x; token.y = 405; tokenText.x = x; tokenText.y = 405; }
-          this.updateState({ lastGesture: 'drag' });
+        window.AprincarInputGestures.attachTapOrDrag(this, token, {
+          threshold: 10,
+          onDrag: (pointer) => {
+            if (this.locked) return;
+            token.x = pointer.x;
+            token.y = pointer.y;
+            tokenText.x = pointer.x;
+            tokenText.y = pointer.y;
+          },
+          onDragEnd: () => {
+            if (this.locked) {
+              token.x = x;
+              token.y = 405;
+              tokenText.x = x;
+              tokenText.y = 405;
+              return;
+            }
+
+            const inSlot = Math.abs(token.x - targetX) < 70 && Math.abs(token.y - targetY) < 60;
+            if (inSlot) {
+              this.submitResult(t === this.challenge.answer, {
+                selected: t,
+                target: this.challenge.answer,
+                interaction: 'drag'
+              });
+            } else {
+              token.x = x;
+              token.y = 405;
+              tokenText.x = x;
+              tokenText.y = 405;
+            }
+            this.updateState({ lastGesture: 'drag' });
+          }
         });
       });
 
