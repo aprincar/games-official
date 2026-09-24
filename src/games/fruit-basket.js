@@ -50,9 +50,9 @@
 
         window.AprincarInputGestures.attachTapOrDrag(this, hitZone, {
           threshold: 10,
-          onDrag: (_pointer, _gameObject, dragX, dragY) => {
-            fruitContainer.x = dragX;
-            fruitContainer.y = dragY;
+          onDrag: (pointer) => {
+            fruitContainer.x = pointer.x;
+            fruitContainer.y = pointer.y;
           },
           onDragEnd: () => {
             const inBasket = Phaser.Geom.Rectangle.Contains(new Phaser.Geom.Rectangle(340, 365, 280, 130), fruitContainer.x, fruitContainer.y);
