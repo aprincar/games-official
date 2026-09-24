@@ -86,25 +86,7 @@ await scenario('Conte os Bichos: falha, retry e sucesso observavel', async () =>
 await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e conclui', async () => {
   await withGame('fruit-basket', {}, async (page) => {
     await page.client.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
-    await page.client.evaluate(`(() => {
-      const scene = Phaser.GAMES[0].scene.getScenes(true)[0];
-      window.__APRINCAR_DRAG_DEBUG__ = [];
-      for (const eventName of ['dragstart', 'drag', 'dragend']) {
-        scene.input.on(eventName, (pointer, gameObject, dragX, dragY) => {
-          window.__APRINCAR_DRAG_DEBUG__.push({
-            eventName,
-            pointerX: pointer && pointer.x,
-            pointerY: pointer && pointer.y,
-            dragX,
-            dragY,
-            objectType: gameObject && gameObject.type,
-            objectX: gameObject && gameObject.x,
-            objectY: gameObject && gameObject.y
-          });
-        });
-      }
-      return true;
-    })()`);
+    await page.client.evaluate('window.__APRINCAR_DRAG_DEBUG__ = []');
     let state = await page.state();
     const sources = state.targets.filter((target) => target.kind === 'drag-source');
     const basket = targetCenter(targetBy(state, 'drop-zone', 'basket'));
@@ -132,25 +114,7 @@ await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e concl
 
 await scenario('Torre de Blocos: drag pointer monta a torre e conclui', async () => {
   await withGame('block-tower', {}, async (page) => {
-    await page.client.evaluate(`(() => {
-      const scene = Phaser.GAMES[0].scene.getScenes(true)[0];
-      window.__APRINCAR_DRAG_DEBUG__ = [];
-      for (const eventName of ['dragstart', 'drag', 'dragend']) {
-        scene.input.on(eventName, (pointer, gameObject, dragX, dragY) => {
-          window.__APRINCAR_DRAG_DEBUG__.push({
-            eventName,
-            pointerX: pointer && pointer.x,
-            pointerY: pointer && pointer.y,
-            dragX,
-            dragY,
-            objectType: gameObject && gameObject.type,
-            objectX: gameObject && gameObject.x,
-            objectY: gameObject && gameObject.y
-          });
-        });
-      }
-      return true;
-    })()`);
+    await page.client.evaluate('window.__APRINCAR_DRAG_DEBUG__ = []');
     let state = await page.state();
     const sources = state.targets.filter((target) => target.kind === 'drag-source');
     const tower = targetCenter(targetBy(state, 'stack-zone', 'tower'));
