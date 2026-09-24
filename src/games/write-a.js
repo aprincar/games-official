@@ -51,7 +51,6 @@
       const zone = this.add.rectangle(660, 340, 480, 360, 0xffffff, 0.001).setInteractive();
       this.handwritingGraphics = this.add.graphics().lineStyle(12, C.blue, 0.9);
       this.roundGroup.add([refGfx, letterRef, zoneGfx, guideGhost, zone, this.handwritingGraphics]);
-      this.target('handwriting-zone', 660, 340, 480, 360, 'draw-zone');
 
       this.strokes = [];
       let current = null;
