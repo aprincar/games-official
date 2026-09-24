@@ -356,8 +356,38 @@ await scenario('Trem dos Padroes: attempts, assistance, drag e reset por rodada'
   });
 });
 
+await scenario('Familia Letras e Escrita: portrait mobile mantem alvos e desenho tocaveis', async () => {
+  for (const slug of ['letter-hunt', 'write-a']) {
+    await withGame(
+      slug,
+      { touch: true, viewport: { width: 390, height: 844, mobile: true } },
+      async (page) => {
+        const state = await page.state();
+        assert.equal(state.familyId, 'literacy');
+        assert.equal(state.viewport.width, 390);
+        assert.equal(state.viewport.height, 844);
+        assert.equal(state.viewport.portrait, true);
+
+        const interactive = (state.targets || []).filter((target) =>
+          ['choice', 'action', 'draw-zone'].includes(target.kind)
+        );
+        assert.ok(interactive.length > 0, slug + ': nenhum alvo interativo publicado');
+
+        for (const target of interactive) {
+          assert.ok(target.w >= 52, slug + ': alvo estreito ' + target.kind + ' ' + target.value);
+          assert.ok(target.h >= 52, slug + ': alvo baixo ' + target.kind + ' ' + target.value);
+          assert.ok(target.x - target.w / 2 >= -1, slug + ': alvo saiu pela esquerda');
+          assert.ok(target.x + target.w / 2 <= 391, slug + ': alvo saiu pela direita');
+          assert.ok(target.y - target.h / 2 >= -1, slug + ': alvo saiu pelo topo');
+          assert.ok(target.y + target.h / 2 <= 845, slug + ': alvo saiu pela base');
+        }
+      }
+    );
+  }
+});
+
 await scenario('Caca as Letras: escolha errada e retry preservam o fluxo', async () => {
-  await withGame('letter-hunt', {}, async (page) => {
+  await withGame('letter-hunt', { touch: true, viewport: { width: 390, height: 844, mobile: true } }, async (page) => {
     let state = await page.state();
     const wrong = wrongChoice(state);
     assert.ok(wrong, 'letter-hunt: alternativa incorreta ausente');
@@ -374,10 +404,19 @@ await scenario('Caca as Letras: escolha errada e retry preservam o fluxo', async
 });
 
 await scenario('Atelie de Letras: capability reconhecida gera sucesso', async () => {
-  await withGame('write-a', { handwritingRecognized: true }, async (page) => {
+  await withGame(
+    'write-a',
+    { handwritingRecognized: true, touch: true, viewport: { width: 390, height: 844, mobile: true } },
+    async (page) => {
     let state = await page.state();
-    const zone = { x: 660, y: 340 };
-    await mouseDrag(page.client, { x: zone.x - 70, y: zone.y - 90 }, { x: zone.x + 65, y: zone.y + 90 }, 14);
+    const zoneTarget = targetBy(state, 'draw-zone', 'handwriting-zone');
+    const zone = targetCenter(zoneTarget);
+    await touchDrag(
+      page.client,
+      { x: zone.x - zoneTarget.w * 0.22, y: zone.y - zoneTarget.h * 0.28 },
+      { x: zone.x + zoneTarget.w * 0.22, y: zone.y + zoneTarget.h * 0.28 },
+      14
+    );
     state = await page.state();
     assert.ok(state.strokeCount >= 1, 'write-a: stroke nao foi registrado');
 
@@ -388,14 +427,29 @@ await scenario('Atelie de Letras: capability reconhecida gera sucesso', async ()
     const host = await page.host();
     const capability = host.events.find((event) => event.type === 'capability.request');
     assert.equal(capability.payload.name, 'handwriting.evaluate');
+    assert.equal(state.familyId, 'literacy');
+    assert.equal(state.viewport.width, 390);
+    assert.equal(state.viewport.height, 844);
+    assert.equal(state.viewport.portrait, true);
+    assert.ok(zoneTarget.w >= 300);
+    assert.ok(zoneTarget.h >= 220);
   });
 });
 
 await scenario('Atelie de Letras: capability nao reconhecida gera falha recuperavel', async () => {
-  await withGame('write-a', { handwritingRecognized: false }, async (page) => {
+  await withGame(
+    'write-a',
+    { handwritingRecognized: false, touch: true, viewport: { width: 390, height: 844, mobile: true } },
+    async (page) => {
     let state = await page.state();
-    const zone = { x: 660, y: 340 };
-    await mouseDrag(page.client, { x: zone.x - 50, y: zone.y - 80 }, { x: zone.x + 50, y: zone.y + 80 }, 10);
+    const zoneTarget = targetBy(state, 'draw-zone', 'handwriting-zone');
+    const zone = targetCenter(zoneTarget);
+    await touchDrag(
+      page.client,
+      { x: zone.x - zoneTarget.w * 0.18, y: zone.y - zoneTarget.h * 0.22 },
+      { x: zone.x + zoneTarget.w * 0.18, y: zone.y + zoneTarget.h * 0.22 },
+      10
+    );
     state = await page.state();
     await mouseTap(page.client, targetCenter(targetBy(state, 'action', 'Conferir')));
     await waitForResult(page, 'failure');
