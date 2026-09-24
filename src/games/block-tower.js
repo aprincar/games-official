@@ -26,12 +26,13 @@
         window.AprincarVectorArt.drawIsometricBlock(blockGfx, 0, 0, 78, 64, blockColor);
         const hitZone = this.add.rectangle(0, 0, 88, 74, 0xffffff, 0.001);
         blockContainer.add([blockGfx, hitZone]);
+        blockContainer.setSize(88, 74);
         this.roundGroup.add(blockContainer);
 
         this.target(`block-${i + 1}`, x, y, 88, 74, 'drag-source');
         this.target(`block-${i + 1}`, x, y, 88, 74, 'toggle');
 
-        window.AprincarInputGestures.attachTapOrDrag(this, hitZone, {
+        window.AprincarInputGestures.attachTapOrDrag(this, blockContainer, {
           threshold: 10,
           onDrag: (pointer) => {
             blockContainer.x = pointer.x;
