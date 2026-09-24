@@ -43,16 +43,17 @@
         window.AprincarVectorArt.drawFruit(fruitGfx, fruitType, 0, 0, 58);
         const hitZone = this.add.circle(0, 0, 44, 0xffffff, 0.001);
         fruitContainer.add([fruitGfx, hitZone]);
+        fruitContainer.setSize(88, 88);
         this.roundGroup.add(fruitContainer);
 
         this.target(`fruit-${i + 1}`, x, y, 88, 88, 'drag-source');
         this.target(`fruit-${i + 1}`, x, y, 88, 88, 'toggle');
 
-        window.AprincarInputGestures.attachTapOrDrag(this, hitZone, {
+        window.AprincarInputGestures.attachTapOrDrag(this, fruitContainer, {
           threshold: 10,
-          onDrag: (_pointer, _gameObject, dragX, dragY) => {
-            fruitContainer.x = dragX;
-            fruitContainer.y = dragY;
+          onDrag: (pointer) => {
+            fruitContainer.x = pointer.x;
+            fruitContainer.y = pointer.y;
           },
           onDragEnd: () => {
             const inBasket = Phaser.Geom.Rectangle.Contains(new Phaser.Geom.Rectangle(340, 365, 280, 130), fruitContainer.x, fruitContainer.y);

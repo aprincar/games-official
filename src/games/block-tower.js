@@ -26,16 +26,17 @@
         window.AprincarVectorArt.drawIsometricBlock(blockGfx, 0, 0, 78, 64, blockColor);
         const hitZone = this.add.rectangle(0, 0, 88, 74, 0xffffff, 0.001);
         blockContainer.add([blockGfx, hitZone]);
+        blockContainer.setSize(88, 74);
         this.roundGroup.add(blockContainer);
 
         this.target(`block-${i + 1}`, x, y, 88, 74, 'drag-source');
         this.target(`block-${i + 1}`, x, y, 88, 74, 'toggle');
 
-        window.AprincarInputGestures.attachTapOrDrag(this, hitZone, {
+        window.AprincarInputGestures.attachTapOrDrag(this, blockContainer, {
           threshold: 10,
-          onDrag: (_pointer, _gameObject, dragX, dragY) => {
-            blockContainer.x = dragX;
-            blockContainer.y = dragY;
+          onDrag: (pointer) => {
+            blockContainer.x = pointer.x;
+            blockContainer.y = pointer.y;
           },
           onDragEnd: () => {
             const inTower = blockContainer.x > 340 && blockContainer.x < 620 && blockContainer.y > 325;
@@ -81,7 +82,7 @@
 
       // Botão de Conferir
       const check = this.addCardButton(780, 500, 160, 60, 'Conferir', '__check__', C.leaf, 'action');
-      this.target('tower', 340, 330, 280, 220, 'stack-zone');
+      this.target('tower', 480, 440, 280, 220, 'stack-zone');
       check.removeAllListeners('pointerup');
       check.on('pointerup', () => {
         const ok = this.selected === this.challenge.answer;

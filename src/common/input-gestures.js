@@ -20,10 +20,9 @@
       this.onDrag = options.onDrag;
       this.onDragEnd = options.onDragEnd;
 
-      this.downX = 0;
-      this.downY = 0;
       this.isDragging = false;
       this.isDown = false;
+      this.gestureHandled = false;
 
       this.setup();
     }
@@ -31,55 +30,59 @@
     setup() {
       this.gameObject.setInteractive({ draggable: true, useHandCursor: true });
       this.scene.input.setDraggable(this.gameObject);
+      this.scene.input.dragDistanceThreshold = Math.max(
+        this.scene.input.dragDistanceThreshold || 0,
+        this.threshold
+      );
 
-      this.gameObject.on('pointerdown', (pointer) => {
-        this.downX = pointer.x;
-        this.downY = pointer.y;
+      this.handlePointerDown = () => {
         this.isDragging = false;
         this.isDown = true;
-      });
+        this.gestureHandled = false;
+      };
 
-      this.gameObject.on('dragstart', (pointer) => {
-        const dist = Phaser.Math.Distance.Between(this.downX, this.downY, pointer.x, pointer.y);
-        if (dist >= this.threshold) {
-          this.isDragging = true;
-          if (this.onDragStart) this.onDragStart(pointer, this.gameObject);
-        }
-      });
+      this.handleDragStart = (pointer, gameObject) => {
+        if (gameObject !== this.gameObject || !this.isDown) return;
+        this.isDragging = true;
+        if (this.onDragStart) this.onDragStart(pointer, this.gameObject);
+      };
 
-      this.gameObject.on('drag', (pointer, dragX, dragY) => {
-        const dist = Phaser.Math.Distance.Between(this.downX, this.downY, pointer.x, pointer.y);
-        if (!this.isDragging && dist >= this.threshold) {
-          this.isDragging = true;
-          if (this.onDragStart) this.onDragStart(pointer, this.gameObject);
-        }
-        if (this.isDragging && this.onDrag) {
-          this.onDrag(pointer, this.gameObject, dragX, dragY);
-        }
-      });
+      this.handleDrag = (pointer, gameObject, dragX, dragY) => {
+        if (gameObject !== this.gameObject || !this.isDragging) return;
+        if (this.onDrag) this.onDrag(pointer, this.gameObject, dragX, dragY);
+      };
 
-      this.gameObject.on('dragend', (pointer) => {
-        if (this.isDragging) {
-          if (this.onDragEnd) this.onDragEnd(pointer, this.gameObject);
-        }
-      });
+      this.handleDragEnd = (pointer, gameObject) => {
+        if (gameObject !== this.gameObject || !this.isDragging) return;
+        if (this.onDragEnd) this.onDragEnd(pointer, this.gameObject);
+        this.gestureHandled = true;
+        this.isDown = false;
+        this.isDragging = false;
+      };
 
-      this.gameObject.on('pointerup', (pointer) => {
-        const dist = Phaser.Math.Distance.Between(this.downX, this.downY, pointer.x, pointer.y);
-        if (!this.isDragging && dist < this.threshold) {
-          if (this.onTap) this.onTap(pointer, this.gameObject);
+      this.handlePointerUp = (pointer) => {
+        if (this.isDragging) return;
+        if (this.isDown && !this.gestureHandled && this.onTap) {
+          this.onTap(pointer, this.gameObject);
         }
         this.isDown = false;
         this.isDragging = false;
-      });
+        this.gestureHandled = false;
+      };
+
+      this.gameObject.on('pointerdown', this.handlePointerDown);
+      this.gameObject.on('pointerup', this.handlePointerUp);
+      this.scene.input.on('dragstart', this.handleDragStart);
+      this.scene.input.on('drag', this.handleDrag);
+      this.scene.input.on('dragend', this.handleDragEnd);
     }
 
     destroy() {
-      this.gameObject.off('pointerdown');
-      this.gameObject.off('dragstart');
-      this.gameObject.off('drag');
-      this.gameObject.off('dragend');
-      this.gameObject.off('pointerup');
+      this.gameObject.off('pointerdown', this.handlePointerDown);
+      this.gameObject.off('pointerup', this.handlePointerUp);
+      this.scene.input.off('dragstart', this.handleDragStart);
+      this.scene.input.off('drag', this.handleDrag);
+      this.scene.input.off('dragend', this.handleDragEnd);
     }
   }
 
