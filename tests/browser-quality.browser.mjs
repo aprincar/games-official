@@ -267,14 +267,17 @@ await scenario('Memoria dos Bichos: mismatch desbloqueia e todos os pares conclu
       byPair.get(card.pairId).push(card);
     }
 
+    let expectedMatched = 0;
     for (const pair of byPair.values()) {
       const current = await page.state();
       await mouseTap(page.client, targetCenter(targetBy(current, 'memory-card', pair[0].id)));
       await mouseTap(page.client, targetCenter(targetBy(current, 'memory-card', pair[1].id)));
+      expectedMatched += 1;
       await waitFor(async () => {
         const s = await page.state();
-        return s.matchedPairs >= 1 && s.inputReady === true || s.lastResult === 'success';
-      }, { label: 'memory-animals: pair processed', timeoutMs: 3500 });
+        return s.lastResult === 'success' ||
+          (s.matchedPairs === expectedMatched && s.inputReady === true);
+      }, { label: 'memory-animals: matchedPairs=' + expectedMatched, timeoutMs: 3500 });
       await delay(40);
     }
 
