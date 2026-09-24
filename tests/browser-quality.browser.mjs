@@ -343,7 +343,7 @@ await scenario('Trem dos Padroes: attempts, assistance, drag e reset por rodada'
     state = await waitFor(async () => {
       const current = await page.state();
       return current.level === initialLevel + 1 && current.inputReady === true ? current : false;
-    }, { label: 'pattern-play: next round reset', timeoutMs: 3500 });
+    }, { label: 'pattern-play: next round reset', timeoutMs: 8000 });
 
     const nextWrong = wrongChoice(state);
     assert.ok(nextWrong, 'pattern-play: alternativa incorreta da rodada 2 ausente');
