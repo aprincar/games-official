@@ -602,36 +602,70 @@ await scenario('Memoria dos Bichos: mismatch desbloqueia e todos os pares conclu
   });
 });
 
-await scenario('Formas no Espaco 3D: attempts, assistance, lock e retry coerentes', async () => {
-  await withGame('space-shapes-3d', {}, async (page) => {
-    await mouseDrag(page.client, { x: 420, y: 340 }, { x: 540, y: 340 }, 10);
-    let state = await waitFor(async () => {
-      const current = await page.state();
-      return current.lastGesture === 'drag' ? current : false;
-    }, { label: 'space-shapes-3d: drag' });
+await scenario('Formas no Espaco 3D: mobile portrait suporta touch, rotacao, retry e evidence', async () => {
+  await withGame(
+    'space-shapes-3d',
+    { touch: true, viewport: { width: 390, height: 844, mobile: true } },
+    async (page) => {
+      let state = await page.state();
 
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      const wrong = state.targets.find((candidate) => candidate.value !== state.challenge.answer);
-      assert.ok(wrong, 'space-shapes-3d: target incorreto ausente');
-      await mouseTap(page.client, targetCenter(wrong));
-      await waitForEvidenceCount(page, attempt);
+      assert.equal(state.familyId, 'spatial');
+      assert.equal(state.viewport.width, 390);
+      assert.equal(state.viewport.height, 844);
+      assert.equal(state.viewport.portrait, true);
+
+      const shapes = state.targets.filter((target) => target.kind === 'shape');
+      assert.ok(shapes.length >= 3, 'space-shapes-3d: formas insuficientes');
+
+      for (const target of shapes) {
+        assert.ok(target.w >= 64, 'space-shapes-3d: alvo estreito ' + target.value);
+        assert.ok(target.h >= 64, 'space-shapes-3d: alvo baixo ' + target.value);
+        assert.ok(target.x - target.w / 2 >= -1, 'space-shapes-3d: alvo saiu pela esquerda');
+        assert.ok(target.x + target.w / 2 <= 391, 'space-shapes-3d: alvo saiu pela direita');
+        assert.ok(target.y - target.h / 2 >= -1, 'space-shapes-3d: alvo saiu pelo topo');
+        assert.ok(target.y + target.h / 2 <= 845, 'space-shapes-3d: alvo saiu pela base');
+      }
+
+      await touchDrag(
+        page.client,
+        { x: 120, y: 430 },
+        { x: 275, y: 470 },
+        12
+      );
+
       state = await waitFor(async () => {
         const current = await page.state();
-        return current.lastResult === 'failure' && current.inputReady === true ? current : false;
-      }, { label: 'space-shapes-3d: retry ' + attempt });
+        return current.lastGesture === 'drag' ? current : false;
+      }, { label: 'space-shapes-3d: touch drag' });
+
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        const wrong = state.targets.find(
+          (candidate) => candidate.kind === 'shape' && candidate.value !== state.challenge.answer
+        );
+        assert.ok(wrong, 'space-shapes-3d: target incorreto ausente');
+        await touchTap(page.client, targetCenter(wrong));
+        await waitForEvidenceCount(page, attempt);
+        state = await waitFor(async () => {
+          const current = await page.state();
+          return current.lastResult === 'failure' && current.inputReady === true ? current : false;
+        }, { label: 'space-shapes-3d: retry ' + attempt });
+      }
+
+      assert.equal(state.assistance, 'visual-cue');
+      const target = state.targets.find(
+        (candidate) => candidate.kind === 'shape' && candidate.value === state.challenge.answer
+      );
+      assert.ok(target, 'space-shapes-3d: target correto ausente');
+
+      await touchTap(page.client, targetCenter(target));
+      await waitForResult(page, 'success');
+      const evidence = await waitForEvidenceCount(page, 3);
+
+      assert.deepEqual(evidence.slice(0, 3).map((item) => item.attempts), [1, 2, 3]);
+      assert.deepEqual(evidence.slice(0, 3).map((item) => item.independent), [true, false, false]);
+      assert.deepEqual(evidence.slice(0, 3).map((item) => item.assistance), ['none', 'none', 'visual-cue']);
     }
-
-    assert.equal(state.assistance, 'visual-cue');
-    const target = state.targets.find((candidate) => candidate.value === state.challenge.answer);
-    assert.ok(target, 'space-shapes-3d: target correto ausente');
-    await mouseTap(page.client, targetCenter(target));
-    await waitForResult(page, 'success');
-    const evidence = await waitForEvidenceCount(page, 3);
-
-    assert.deepEqual(evidence.slice(0, 3).map((item) => item.attempts), [1, 2, 3]);
-    assert.deepEqual(evidence.slice(0, 3).map((item) => item.independent), [true, false, false]);
-    assert.deepEqual(evidence.slice(0, 3).map((item) => item.assistance), ['none', 'none', 'visual-cue']);
-  });
+  );
 });
 
 await harness.close();
