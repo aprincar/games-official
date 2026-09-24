@@ -85,7 +85,6 @@ await scenario('Conte os Bichos: falha, retry e sucesso observavel', async () =>
 
 await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e conclui', async () => {
   await withGame('fruit-basket', { touch: true }, async (page) => {
-    await page.client.evaluate('window.__APRINCAR_DRAG_DEBUG__ = []');
     let state = await page.state();
     const sources = state.targets.filter((target) => target.kind === 'drag-source');
     const basket = targetCenter(targetBy(state, 'drop-zone', 'basket'));
@@ -96,10 +95,7 @@ await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e concl
       await waitFor(async () => {
         const current = await page.state();
         return current.selectedCount === i + 1;
-      }, { label: 'fruit-basket: selectedCount=' + (i + 1) }).catch(async (error) => {
-        const debug = await page.client.evaluate('window.__APRINCAR_DRAG_DEBUG__');
-        throw new Error(error.message + ' debug=' + JSON.stringify(debug));
-      });
+      }, { label: 'fruit-basket: selectedCount=' + (i + 1) });
     }
 
     state = await page.state();
@@ -112,7 +108,6 @@ await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e concl
 
 await scenario('Torre de Blocos: drag pointer monta a torre e conclui', async () => {
   await withGame('block-tower', {}, async (page) => {
-    await page.client.evaluate('window.__APRINCAR_DRAG_DEBUG__ = []');
     let state = await page.state();
     const sources = state.targets.filter((target) => target.kind === 'drag-source');
     const tower = targetCenter(targetBy(state, 'stack-zone', 'tower'));
@@ -123,10 +118,7 @@ await scenario('Torre de Blocos: drag pointer monta a torre e conclui', async ()
       await waitFor(async () => {
         const current = await page.state();
         return current.selectedCount === i + 1 && current.stackHeight === i + 1;
-      }, { label: 'block-tower: stackHeight=' + (i + 1) }).catch(async (error) => {
-        const debug = await page.client.evaluate('window.__APRINCAR_DRAG_DEBUG__');
-        throw new Error(error.message + ' debug=' + JSON.stringify(debug));
-      });
+      }, { label: 'block-tower: stackHeight=' + (i + 1) });
     }
 
     state = await page.state();
