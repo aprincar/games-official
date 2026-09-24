@@ -348,8 +348,16 @@ export function targetBy(state, kind, value) {
 }
 
 export function targetCenter(target) {
-  if (target.normalized) return { x: target.normalized.x * 960, y: target.normalized.y * 640 };
-  return { x: target.x, y: target.y };
+  if (Number.isFinite(target?.x) && Number.isFinite(target?.y)) {
+    return { x: target.x, y: target.y };
+  }
+  if (target?.normalized) {
+    return {
+      x: target.normalized.x * 960,
+      y: target.normalized.y * 640
+    };
+  }
+  throw new Error('Target sem coordenadas utilizaveis');
 }
 
 export async function mouseTap(client, point) {

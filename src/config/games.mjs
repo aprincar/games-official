@@ -217,6 +217,7 @@ export const games = [
     variant: 'geometry',
     familyId: 'spatial',
     objective: 'Reconhecer sólidos a partir de diferentes pontos de vista.',
+    mobileFirst: true,
     skillId: 'math.geometry.solids',
     ages: [5, 10],
     interests: ['geometry', '3d', 'exploration'],
