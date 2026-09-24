@@ -82,7 +82,7 @@
 
       // Botão de Conferir
       const check = this.addCardButton(780, 500, 160, 60, 'Conferir', '__check__', C.leaf, 'action');
-      this.target('tower', 340, 330, 280, 220, 'stack-zone');
+      this.target('tower', 480, 440, 280, 220, 'stack-zone');
       check.removeAllListeners('pointerup');
       check.on('pointerup', () => {
         const ok = this.selected === this.challenge.answer;
