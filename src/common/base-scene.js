@@ -43,6 +43,7 @@
     }
 
     clearRound() {
+      this.input.off('dragstart');
       this.input.off('drag');
       this.input.off('dragend');
       this.input.off('pointerdown');
