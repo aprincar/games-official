@@ -452,12 +452,12 @@ await scenario('Caca as Letras: escolha errada e retry preservam o fluxo', async
     let state = await page.state();
     const wrong = wrongChoice(state);
     assert.ok(wrong, 'letter-hunt: alternativa incorreta ausente');
-    await mouseTap(page.client, targetCenter(wrong));
+    await touchTap(page.client, targetCenter(wrong));
     await waitForResult(page, 'failure');
     await waitForInputReady(page);
 
     state = await page.state();
-    await mouseTap(page.client, choiceTarget(state, state.challenge.answer));
+    await touchTap(page.client, choiceTarget(state, state.challenge.answer));
     await waitForResult(page, 'success');
     await assertEvidence(page, 'failure');
     await assertEvidence(page, 'success');
@@ -666,6 +666,112 @@ await scenario('Formas no Espaco 3D: mobile portrait suporta touch, rotacao, ret
       assert.deepEqual(evidence.slice(0, 3).map((item) => item.assistance), ['none', 'none', 'visual-cue']);
     }
   );
+});
+
+
+await scenario('Matriz responsiva: 10 jogos permanecem utilizaveis em celular, landscape, tablet e desktop', async () => {
+  const games = [
+    'counting-animals',
+    'fruit-basket',
+    'block-tower',
+    'color-match',
+    'pattern-play',
+    'letter-hunt',
+    'write-a',
+    'paint-free',
+    'memory-animals',
+    'space-shapes-3d',
+  ];
+
+  const profiles = [
+    { name: 'phone-small', touch: true, viewport: { width: 360, height: 800, mobile: true } },
+    { name: 'phone-standard', touch: true, viewport: { width: 390, height: 844, mobile: true } },
+    { name: 'phone-landscape', touch: true, viewport: { width: 844, height: 390, mobile: true } },
+    { name: 'tablet', touch: true, viewport: { width: 820, height: 1180, mobile: true } },
+    { name: 'desktop', touch: false, viewport: { width: 1280, height: 800, mobile: false } },
+  ];
+
+  const interactiveKinds = new Set([
+    'animal',
+    'choice',
+    'action',
+    'drag-source',
+    'toggle',
+    'drop-zone',
+    'stack-zone',
+    'memory-card',
+    'draw-zone',
+    'palette-choice',
+    'shape',
+  ]);
+
+  for (const profile of profiles) {
+    for (const slug of games) {
+      await withGame(
+        slug,
+        { touch: profile.touch, viewport: profile.viewport },
+        async (page) => {
+          const state = await page.state();
+          const width = profile.viewport.width;
+          const height = profile.viewport.height;
+
+          assert.equal(state.viewport?.width, width, slug + ': viewport width em ' + profile.name);
+          assert.equal(state.viewport?.height, height, slug + ': viewport height em ' + profile.name);
+          assert.equal(
+            state.viewport?.portrait,
+            height >= width,
+            slug + ': orientacao publicada em ' + profile.name
+          );
+
+          assert.ok(state.familyId, slug + ': familyId ausente em ' + profile.name);
+          assert.ok(state.objective, slug + ': objective ausente em ' + profile.name);
+
+          const targets = (state.targets || []).filter((target) =>
+            interactiveKinds.has(target.kind)
+          );
+          assert.ok(targets.length > 0, slug + ': sem targets em ' + profile.name);
+
+          for (const target of targets) {
+            assert.ok(
+              Number.isFinite(target.x) && Number.isFinite(target.y),
+              slug + ': target sem coordenadas em ' + profile.name + ' (' + target.kind + ')'
+            );
+            assert.ok(
+              Number.isFinite(target.w) && Number.isFinite(target.h),
+              slug + ': target sem dimensoes em ' + profile.name + ' (' + target.kind + ')'
+            );
+
+            const minimum = profile.touch ? 52 : 44;
+            assert.ok(
+              target.w >= minimum,
+              slug + ': target estreito em ' + profile.name + ' (' + target.kind + ':' + target.value + ')'
+            );
+            assert.ok(
+              target.h >= minimum,
+              slug + ': target baixo em ' + profile.name + ' (' + target.kind + ':' + target.value + ')'
+            );
+
+            assert.ok(
+              target.x - target.w / 2 >= -1,
+              slug + ': target fora pela esquerda em ' + profile.name + ' (' + target.kind + ':' + target.value + ')'
+            );
+            assert.ok(
+              target.x + target.w / 2 <= width + 1,
+              slug + ': target fora pela direita em ' + profile.name + ' (' + target.kind + ':' + target.value + ')'
+            );
+            assert.ok(
+              target.y - target.h / 2 >= -1,
+              slug + ': target fora pelo topo em ' + profile.name + ' (' + target.kind + ':' + target.value + ')'
+            );
+            assert.ok(
+              target.y + target.h / 2 <= height + 1,
+              slug + ': target fora pela base em ' + profile.name + ' (' + target.kind + ':' + target.value + ')'
+            );
+          }
+        }
+      );
+    }
+  }
 });
 
 await harness.close();
