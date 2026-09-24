@@ -152,7 +152,7 @@ class CdpClient {
   }
 }
 
-async function waitForJsonEndpoint(url, attempts = 80) {
+async function waitForJsonEndpoint(url, attempts = 200) {
   let lastError;
   for (let i = 0; i < attempts; i++) {
     try {
