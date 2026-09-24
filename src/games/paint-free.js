@@ -16,28 +16,91 @@
       this.paintStrokes = [];
 
       const buttonHeight = Math.max(layout.touchTarget, 58);
-      const paletteHeight = layout.portrait ? 118 : 82;
-      const paletteBounds = {
-        left: stage.left,
-        top: stage.top + 4,
-        width: stage.width,
-        height: paletteHeight
-      };
+      const compactLandscape = layout.landscape && layout.height <= 560;
 
-      const paletteCols = layout.portrait ? 4 : 7;
+      let paletteBounds;
+      let paletteCols;
+      let drawingBounds;
+      let saveX;
+      let saveY;
+      let saveWidth;
+
+      if (compactLandscape) {
+        const gap = 10;
+        const paletteWidth = window.AprincarLayout.clamp(
+          stage.width * 0.30,
+          220,
+          250
+        );
+        saveWidth = window.AprincarLayout.clamp(
+          stage.width * 0.20,
+          150,
+          180
+        );
+
+        paletteBounds = {
+          left: stage.left,
+          top: stage.top,
+          width: paletteWidth,
+          height: stage.height
+        };
+        paletteCols = 4;
+
+        drawingBounds = {
+          left: paletteBounds.left + paletteBounds.width + gap,
+          top: stage.top,
+          width: Math.max(
+            220,
+            stage.width - paletteWidth - saveWidth - gap * 2
+          ),
+          height: stage.height
+        };
+
+        saveX = stage.right - saveWidth / 2;
+        saveY = stage.centerY;
+      } else {
+        const paletteHeight = layout.portrait ? 118 : 82;
+        paletteBounds = {
+          left: stage.left,
+          top: stage.top + 4,
+          width: stage.width,
+          height: paletteHeight
+        };
+        paletteCols = layout.portrait ? 4 : 7;
+
+        const canvasTop = paletteBounds.top + paletteBounds.height + 10;
+        const canvasBottom = stage.bottom - buttonHeight - 18;
+        drawingBounds = {
+          left: stage.left,
+          top: canvasTop,
+          width: stage.width,
+          height: Math.max(
+            layout.portrait ? 220 : 160,
+            canvasBottom - canvasTop
+          )
+        };
+
+        saveWidth = Math.min(stage.width * 0.72, 250);
+        saveX = stage.centerX;
+        saveY = stage.bottom - buttonHeight / 2 - 4;
+      }
+
       const paletteGrid = window.AprincarLayout.grid(
         PAINT_COLORS.length,
         paletteBounds,
         {
           cols: paletteCols,
-          gapX: layout.portrait ? 8 : 12,
-          gapY: 8
+          gapX: compactLandscape ? 6 : layout.portrait ? 8 : 12,
+          gapY: compactLandscape ? 6 : 8
         }
       );
 
       PAINT_COLORS.forEach((color, index) => {
         const cell = paletteGrid.points[index];
-        const size = Math.max(layout.touchTarget, Math.min(cell.width, cell.height, 58));
+        const size = Math.max(
+          layout.touchTarget,
+          Math.min(cell.width, cell.height, 58)
+        );
         const swatch = this.add
           .circle(cell.x, cell.y, size / 2 - 4, color)
           .setStrokeStyle(color === C.ink ? 2 : 0, 0xffffff)
@@ -63,15 +126,6 @@
           this.updateState({ selectedColor: color, lastGesture: 'tap-color' });
         });
       });
-
-      const canvasTop = paletteBounds.top + paletteBounds.height + 10;
-      const canvasBottom = stage.bottom - buttonHeight - 18;
-      const drawingBounds = {
-        left: stage.left,
-        top: canvasTop,
-        width: stage.width,
-        height: Math.max(220, canvasBottom - canvasTop)
-      };
 
       const canvasGfx = this.add.graphics();
       canvasGfx.fillStyle(0xffffff, 1);
@@ -167,9 +221,9 @@
       });
 
       const save = this.addCardButton(
-        stage.centerX,
-        stage.bottom - buttonHeight / 2 - 4,
-        Math.min(stage.width * 0.72, 250),
+        saveX,
+        saveY,
+        saveWidth,
         buttonHeight,
         'Guardar desenho',
         'Guardar desenho',
