@@ -7,6 +7,7 @@ import {
   targetBy,
   targetCenter,
   touchDrag,
+  touchTap,
   waitFor,
   waitForInputReady,
   waitForResult,
@@ -313,25 +314,55 @@ await scenario('Mundo das Cores: erro de classificacao retorna e retry acerta', 
   });
 });
 
+await scenario('Familia Logica e Memoria: portrait mobile mantem alvos tocaveis', async () => {
+  for (const slug of ['pattern-play', 'memory-animals']) {
+    await withGame(
+      slug,
+      { touch: true, viewport: { width: 390, height: 844, mobile: true } },
+      async (page) => {
+        const state = await page.state();
+        assert.equal(state.familyId, 'logic');
+        assert.equal(state.viewport.width, 390);
+        assert.equal(state.viewport.height, 844);
+        assert.equal(state.viewport.portrait, true);
+
+        const interactive = (state.targets || []).filter((target) =>
+          ['choice', 'drag-source', 'drop-zone', 'memory-card'].includes(target.kind)
+        );
+        assert.ok(interactive.length > 0, slug + ': nenhum alvo interativo publicado');
+
+        for (const target of interactive) {
+          assert.ok(target.w >= 52, slug + ': alvo estreito ' + target.kind + ' ' + target.value);
+          assert.ok(target.h >= 52, slug + ': alvo baixo ' + target.kind + ' ' + target.value);
+          assert.ok(target.x - target.w / 2 >= -1, slug + ': alvo saiu pela esquerda');
+          assert.ok(target.x + target.w / 2 <= 391, slug + ': alvo saiu pela direita');
+          assert.ok(target.y - target.h / 2 >= -1, slug + ': alvo saiu pelo topo');
+          assert.ok(target.y + target.h / 2 <= 845, slug + ': alvo saiu pela base');
+        }
+      }
+    );
+  }
+});
+
 await scenario('Trem dos Padroes: attempts, assistance, drag e reset por rodada', async () => {
-  await withGame('pattern-play', {}, async (page) => {
+  await withGame('pattern-play', { touch: true, viewport: { width: 390, height: 844, mobile: true } }, async (page) => {
     let state = await page.state();
     const initialLevel = state.level;
     const wrong = wrongChoice(state);
     assert.ok(wrong, 'pattern-play: alternativa incorreta ausente');
 
-    await mouseTap(page.client, targetCenter(wrong));
+    await touchTap(page.client, targetCenter(wrong));
     await waitForEvidenceCount(page, 1);
     await waitForInputReady(page);
 
-    await mouseTap(page.client, targetCenter(wrong));
+    await touchTap(page.client, targetCenter(wrong));
     await waitForEvidenceCount(page, 2);
     await waitForInputReady(page);
 
     state = await page.state();
     const correctToken = targetBy(state, 'drag-source', state.challenge.answer);
     const slot = targetBy(state, 'drop-zone', 'pattern-slot');
-    await mouseDrag(page.client, targetCenter(correctToken), targetCenter(slot));
+    await touchDrag(page.client, targetCenter(correctToken), targetCenter(slot));
     await waitForResult(page, 'success');
     let evidence = await waitForEvidenceCount(page, 3);
 
@@ -347,7 +378,7 @@ await scenario('Trem dos Padroes: attempts, assistance, drag e reset por rodada'
 
     const nextWrong = wrongChoice(state);
     assert.ok(nextWrong, 'pattern-play: alternativa incorreta da rodada 2 ausente');
-    await mouseTap(page.client, targetCenter(nextWrong));
+    await touchTap(page.client, targetCenter(nextWrong));
     evidence = await waitForEvidenceCount(page, 4);
 
     assert.equal(evidence[3].attempts, 1);
@@ -486,15 +517,15 @@ await scenario('Pintura Livre: desenho persiste no storage e produz evidence obs
 });
 
 await scenario('Memoria dos Bichos: mismatch desbloqueia e todos os pares concluem', async () => {
-  await withGame('memory-animals', {}, async (page) => {
+  await withGame('memory-animals', { touch: true, viewport: { width: 390, height: 844, mobile: true } }, async (page) => {
     let state = await page.state();
     const cards = state.challenge.cards;
     const first = cards[0];
     const mismatch = cards.find((card) => card.pairId !== first.pairId);
     assert.ok(mismatch, 'memory-animals: par divergente ausente');
 
-    await mouseTap(page.client, targetCenter(targetBy(state, 'memory-card', first.id)));
-    await mouseTap(page.client, targetCenter(targetBy(state, 'memory-card', mismatch.id)));
+    await touchTap(page.client, targetCenter(targetBy(state, 'memory-card', first.id)));
+    await touchTap(page.client, targetCenter(targetBy(state, 'memory-card', mismatch.id)));
     await waitFor(async () => {
       const current = await page.state();
       return current.lastResult === 'failure' && current.inputReady === true;
@@ -511,8 +542,8 @@ await scenario('Memoria dos Bichos: mismatch desbloqueia e todos os pares conclu
     let expectedMatched = 0;
     for (const pair of byPair.values()) {
       const current = await page.state();
-      await mouseTap(page.client, targetCenter(targetBy(current, 'memory-card', pair[0].id)));
-      await mouseTap(page.client, targetCenter(targetBy(current, 'memory-card', pair[1].id)));
+      await touchTap(page.client, targetCenter(targetBy(current, 'memory-card', pair[0].id)));
+      await touchTap(page.client, targetCenter(targetBy(current, 'memory-card', pair[1].id)));
       expectedMatched += 1;
       await waitFor(async () => {
         const s = await page.state();
