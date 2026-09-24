@@ -278,6 +278,12 @@ export async function startBrowserHarness() {
   async function openGame(slug, options = {}) {
     const page = await createPage(chrome.debugPort, hostPrelude(options));
     const client = page.client;
+    if (options.touch === true) {
+      await client.send('Emulation.setTouchEmulationEnabled', {
+        enabled: true,
+        maxTouchPoints: 5,
+      });
+    }
     const url = server.baseUrl + '/games/' + slug + '/game.html';
     await client.send('Page.navigate', { url });
 
