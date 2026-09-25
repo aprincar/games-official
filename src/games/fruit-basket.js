@@ -322,7 +322,20 @@
     }
 
     publishFruits(lastGesture) {
+      for (const fruit of this.fruits) {
+        for (const target of this.testTargets) {
+          if (
+            target.value === fruit.id &&
+            (target.kind === 'drag-source' || target.kind === 'toggle')
+          ) {
+            target.x = fruit.container.x;
+            target.y = fruit.container.y;
+          }
+        }
+      }
+
       this.updateState({
+        targets: this.testTargets,
         selectedCount: this.selected,
         fruitStates: this.fruitSnapshot(),
         basketBounds: this.basketBounds,

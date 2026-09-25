@@ -6,6 +6,9 @@ import { games } from '../src/config/games.mjs';
 const runtime = fs.readFileSync(new URL('../src/runtime/phaser-runtime.js', import.meta.url), 'utf8');
 const three = fs.readFileSync(new URL('../src/runtime/three-runtime.js', import.meta.url), 'utf8');
 const brand = fs.readFileSync(new URL('../src/runtime/brand.js', import.meta.url), 'utf8');
+const fruitBasket = fs.readFileSync(new URL('../src/games/fruit-basket.js', import.meta.url), 'utf8');
+const blockTower = fs.readFileSync(new URL('../src/games/block-tower.js', import.meta.url), 'utf8');
+const browserHarness = fs.readFileSync(new URL('./browser-harness.mjs', import.meta.url), 'utf8');
 
 test('Phaser rounds clean global input listeners before installing new round handlers', () => {
   assert.match(runtime, /this\.input\.off\(['"]drag['"]\)/);
@@ -45,4 +48,19 @@ test('game runtime uses Aprincar portal brand v4 without the legacy star identit
   assert.match(brand, /#FFC83D/i);
   assert.doesNotMatch(brand, /aprincar-star/);
   assert.doesNotMatch(brand, /brandVersion', 3/);
+});
+
+
+test('reversible counting publishes interactive targets at their current visual positions', () => {
+  for (const source of [fruitBasket, blockTower]) {
+    assert.match(source, /target\.x = .*\.container\.x/);
+    assert.match(source, /target\.y = .*\.container\.y/);
+    assert.match(source, /targets:\s*this\.testTargets/);
+  }
+});
+
+test('browser harness waits for Chrome exit and retries temporary directory cleanup', () => {
+  assert.match(browserHarness, /waitForProcessExit/);
+  assert.match(browserHarness, /maxRetries:\s*8/);
+  assert.match(browserHarness, /retryDelay:\s*75/);
 });

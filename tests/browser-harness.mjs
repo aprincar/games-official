@@ -198,6 +198,20 @@ function hostPrelude(options = {}) {
   ].join('\n');
 }
 
+async function waitForProcessExit(processRef, timeoutMs = 1500) {
+  if (processRef.exitCode !== null) return;
+  await new Promise((resolve) => {
+    let timer;
+    const finish = () => {
+      if (timer) clearTimeout(timer);
+      processRef.off('exit', finish);
+      resolve();
+    };
+    processRef.once('exit', finish);
+    timer = setTimeout(finish, timeoutMs);
+  });
+}
+
 async function launchChrome() {
   const chrome = findChrome();
   const debugPort = await freePort();
@@ -236,9 +250,17 @@ async function launchChrome() {
     userDataDir,
     async close() {
       if (processRef.exitCode === null) processRef.kill('SIGTERM');
-      await sleep(100);
-      if (processRef.exitCode === null) processRef.kill('SIGKILL');
-      fs.rmSync(userDataDir, { recursive: true, force: true });
+      await waitForProcessExit(processRef);
+      if (processRef.exitCode === null) {
+        processRef.kill('SIGKILL');
+        await waitForProcessExit(processRef, 1000);
+      }
+      fs.rmSync(userDataDir, {
+        recursive: true,
+        force: true,
+        maxRetries: 8,
+        retryDelay: 75
+      });
     },
   };
 }
