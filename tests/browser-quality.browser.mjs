@@ -208,7 +208,11 @@ await scenario('Cesta de Frutas: drag touch seleciona quantidade correta e concl
 
 await scenario('Torre de Blocos: tap fallback e remocao mantem pilha visual compacta', async () => {
   await withGame('block-tower', { viewport: { width: 390, height: 844, mobile: true } }, async (page) => {
-    let state = await page.state();
+    let state = await waitFor(async () => {
+      const current = await page.state();
+      const toggles = current.targets.filter((target) => target.kind === 'toggle');
+      return current.inputReady && toggles.length >= 2 ? current : false;
+    }, { label: 'block-tower: input ready for tap fallback' });
     const sources = state.targets.filter((target) => target.kind === 'toggle');
 
     await mouseTap(page.client, targetCenter(sources[0]));
