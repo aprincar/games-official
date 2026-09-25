@@ -324,7 +324,20 @@
     }
 
     publishBlocks(lastGesture) {
+      for (const block of this.blocks) {
+        for (const target of this.testTargets) {
+          if (
+            target.value === block.id &&
+            (target.kind === 'drag-source' || target.kind === 'toggle')
+          ) {
+            target.x = block.container.x;
+            target.y = block.container.y;
+          }
+        }
+      }
+
       this.updateState({
+        targets: this.testTargets,
         selectedCount: this.selected,
         stackHeight: this.stack.length,
         blockStates: this.blockSnapshot(),
