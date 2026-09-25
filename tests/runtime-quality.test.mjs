@@ -5,6 +5,7 @@ import { games } from '../src/config/games.mjs';
 
 const runtime = fs.readFileSync(new URL('../src/runtime/phaser-runtime.js', import.meta.url), 'utf8');
 const three = fs.readFileSync(new URL('../src/runtime/three-runtime.js', import.meta.url), 'utf8');
+const brand = fs.readFileSync(new URL('../src/runtime/brand.js', import.meta.url), 'utf8');
 
 test('Phaser rounds clean global input listeners before installing new round handlers', () => {
   assert.match(runtime, /this\.input\.off\(['"]drag['"]\)/);
@@ -34,4 +35,14 @@ test('Three.js distinguishes drag using total pointer distance and does not shuf
   assert.match(three, /downPoint/);
   assert.match(three, /lastPoint/);
   assert.doesNotMatch(three, /sort\(\(\) => Math\.random\(\) - \.5\)/);
+});
+
+
+test('game runtime uses Aprincar portal brand v4 without the legacy star identity', () => {
+  assert.match(brand, /data-brand-version="4"/);
+  assert.match(brand, /aprincar-portal/);
+  assert.match(brand, /#4F6EF7/i);
+  assert.match(brand, /#FFC83D/i);
+  assert.doesNotMatch(brand, /aprincar-star/);
+  assert.doesNotMatch(brand, /brandVersion', 3/);
 });
