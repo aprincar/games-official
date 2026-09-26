@@ -30,7 +30,7 @@ const baseManifest = {
   engines: { aprincar: '^1.0.0', sdkProtocol: 1 },
   entrypoints: { game: 'game.html' },
   permissions: [], optionalPermissions: [],
-  contributes: { skills: ['math.counting.1-10'] },
+  contributes: { skills: ['math.counting.1-10'], ageGuidance: { min: 4, max: 7 } },
   experience: {
     fantasy: 'Fixture de aprendizagem',
     mechanic: 'tap-choice',
