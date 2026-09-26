@@ -1,5 +1,5 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Memória dos Bichos — Aprincar</title><style>
-*{box-sizing:border-box}html,body,#game{width:100%;height:100%;margin:0;overflow:hidden}body{font-family:Inter,ui-rounded,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f6f2;color:#242523}canvas{display:block;touch-action:none}.three-ui{position:absolute;z-index:3;left:0;right:0;top:0;padding:20px 28px;pointer-events:none;text-align:center}.three-brand{position:absolute;left:22px;top:14px}.aprincar-game-lockup{display:flex;align-items:center;gap:8px;color:#2563eb;font:900 18px/1 ui-rounded,"Arial Rounded MT Bold","Trebuchet MS",Inter,system-ui,sans-serif}.aprincar-game-lockup svg{width:36px;height:36px;display:block}.aprincar-game-wordmark{display:inline-flex;letter-spacing:-.04em}.three-ui #three-level{position:absolute;right:26px;top:23px;color:#2563eb;font-weight:800}.three-ui h1{margin:28px auto 4px;font-size:clamp(24px,4vw,36px)}.three-ui p{margin:0;color:#6f716d;font-weight:700}#three-canvas{width:100%;height:100%}@media(max-width:600px){.three-ui{padding:12px 14px}.three-brand{left:12px;top:10px}.aprincar-game-lockup{font-size:14px;gap:5px}.aprincar-game-lockup svg{width:28px;height:28px}.three-ui #three-level{right:14px;top:15px;font-size:13px}.three-ui h1{margin:48px auto 4px;font-size:clamp(22px,7vw,30px);max-width:82vw}.three-ui p{font-size:13px;max-width:88vw;margin:0 auto;line-height:1.3}}@media(orientation:landscape) and (max-height:560px){.three-ui h1{margin:24px auto 2px}.three-ui p{font-size:12px}}</style></head><body><div id="game"></div><script>window.APRINCAR_GAME_CONFIG={"name":"Memória dos Bichos","mode":"memory","variant":"animals","skillId":"perception.visual.discrimination","fantasy":"Reserva dos pares","mechanic":"flip-pairs","familyId":"logic","objective":"Usar memória visual para localizar pares.","mobileFirst":true};</script><script>(()=>{
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Pintura por Cores — Aprincar</title><style>
+*{box-sizing:border-box}html,body,#game{width:100%;height:100%;margin:0;overflow:hidden}body{font-family:Inter,ui-rounded,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f6f2;color:#242523}canvas{display:block;touch-action:none}.three-ui{position:absolute;z-index:3;left:0;right:0;top:0;padding:20px 28px;pointer-events:none;text-align:center}.three-brand{position:absolute;left:22px;top:14px}.aprincar-game-lockup{display:flex;align-items:center;gap:8px;color:#2563eb;font:900 18px/1 ui-rounded,"Arial Rounded MT Bold","Trebuchet MS",Inter,system-ui,sans-serif}.aprincar-game-lockup svg{width:36px;height:36px;display:block}.aprincar-game-wordmark{display:inline-flex;letter-spacing:-.04em}.three-ui #three-level{position:absolute;right:26px;top:23px;color:#2563eb;font-weight:800}.three-ui h1{margin:28px auto 4px;font-size:clamp(24px,4vw,36px)}.three-ui p{margin:0;color:#6f716d;font-weight:700}#three-canvas{width:100%;height:100%}@media(max-width:600px){.three-ui{padding:12px 14px}.three-brand{left:12px;top:10px}.aprincar-game-lockup{font-size:14px;gap:5px}.aprincar-game-lockup svg{width:28px;height:28px}.three-ui #three-level{right:14px;top:15px;font-size:13px}.three-ui h1{margin:48px auto 4px;font-size:clamp(22px,7vw,30px);max-width:82vw}.three-ui p{font-size:13px;max-width:88vw;margin:0 auto;line-height:1.3}}@media(orientation:landscape) and (max-height:560px){.three-ui h1{margin:24px auto 2px}.three-ui p{font-size:12px}}</style></head><body><div id="game"></div><script>window.APRINCAR_GAME_CONFIG={"name":"Pintura por Cores","mode":"paint","variant":"guided","skillId":"perception.colors.match","fantasy":"Livro de colorir","mechanic":"paint-regions","familyId":"creative","objective":"Combinar pistas visuais e cores enquanto pinta regiões grandes.","mobileFirst":true};</script><script>(()=>{
   let port=null, readyResolve;
   const pending=new Map();
   const connected=new Promise(r=>readyResolve=r);
@@ -1313,256 +1313,228 @@ window.createAprincarPhaserConfig = function createAprincarPhaserConfig(sceneCla
   window.AprincarConstants = { C, FONT };
 })();
 
-// Memória dos Bichos — Reserva dos Pares
+// Pintura por Cores — Livro de Colorir
 (() => {
-  const { FONT } = window.AprincarConstants;
+  const { C, FONT } = window.AprincarConstants;
+  const CFG = window.APRINCAR_GAME_CONFIG;
 
-  class MemoryAnimalsScene extends window.AprincarBaseScene {
+  const PALETTE = [
+    { name: 'azul', color: C.blue, symbol: '●' },
+    { name: 'amarelo', color: C.sun, symbol: '★' },
+    { name: 'verde', color: C.leaf, symbol: '▲' },
+    { name: 'coral', color: C.coral, symbol: '■' }
+  ];
+
+  class GuidedPaintingScene extends window.AprincarBaseScene {
     nextRound() {
       this.clearRound();
       this.levelText.setText(`Fase ${this.level}`);
-
-      const seed = (Date.now() % 100000) + this.level * 97;
-      const rng = createSeededRandom(seed);
-      this.challenge = generateMemoryChallenge({ rng, seed, level: this.level });
+      this.promptText.setText('Escolha a tinta e pinte cada desenho pela pista de cor + símbolo');
 
       const layout = this.layout;
       const stage = layout.stage;
-      const cards = this.challenge.cards || [];
+      const paletteHeight = layout.portrait ? 96 : 72;
+      const buttonHeight = Math.max(layout.touchTarget, 58);
+      const compactLandscape = layout.landscape && layout.height <= 560;
 
-      this.promptText.setText('Encontre todos os pares');
-      this.memoryOpen = [];
-      this.memoryMatched = 0;
-      this.memoryMoves = 0;
+      let canvasBounds;
+      let paletteBounds;
+      let cells;
+      let checkPosition;
 
-      let cols;
-      if (layout.portrait) {
-        cols = cards.length <= 8 ? 2 : cards.length <= 12 ? 3 : 4;
+      if (compactLandscape) {
+        const gap = 10;
+        const paletteWidth = Math.min(190, Math.max(150, stage.width * 0.24));
+        const checkWidth = Math.min(170, Math.max(140, stage.width * 0.20));
+        paletteBounds = {
+          left: stage.left,
+          top: stage.top,
+          width: paletteWidth,
+          height: stage.height
+        };
+        const paletteGrid = window.AprincarLayout.grid(PALETTE.length, paletteBounds, {
+          cols: 2,
+          gapX: 8,
+          gapY: 8
+        });
+        cells = paletteGrid.points;
+        canvasBounds = {
+          left: stage.left + paletteWidth + gap,
+          top: stage.top,
+          width: Math.max(260, stage.width - paletteWidth - checkWidth - gap * 2),
+          height: stage.height
+        };
+        checkPosition = {
+          x: stage.right - checkWidth / 2,
+          y: stage.centerY,
+          width: checkWidth
+        };
       } else {
-        cols = Math.min(5, Math.ceil(cards.length / 2));
+        const canvasTop = stage.top + paletteHeight + 10;
+        const canvasBottom = stage.bottom - buttonHeight - 18;
+        canvasBounds = {
+          left: stage.left,
+          top: canvasTop,
+          width: stage.width,
+          height: Math.max(layout.touchTarget * 3.2, canvasBottom - canvasTop)
+        };
+        paletteBounds = {
+          left: stage.left,
+          top: stage.top,
+          width: stage.width,
+          height: paletteHeight
+        };
+        cells = window.AprincarLayout.row(PALETTE.length, paletteBounds, {
+          gap: 8,
+          minWidth: layout.touchTarget,
+          maxWidth: 72
+        });
+        checkPosition = {
+          x: stage.centerX,
+          y: stage.bottom - buttonHeight / 2 - 3,
+          width: Math.min(stage.width * 0.72, 260)
+        };
       }
 
-      const grid = window.AprincarLayout.grid(cards.length, {
-        left: stage.left,
-        top: stage.top + 8,
-        width: stage.width,
-        height: Math.max(240, stage.height - 16)
-      }, {
-        cols,
-        gapX: layout.portrait ? 10 : 14,
-        gapY: layout.portrait ? 10 : 12
-      });
+      this.selected = PALETTE[0];
+      this.painted = {};
+      this.regionObjects = new Map();
 
-      cards.forEach((card, index) => {
-        const cell = grid.points[index];
-        const cardWidth = window.AprincarLayout.clamp(
-          cell.width * 0.88,
-          layout.touchTarget,
-          layout.portrait ? 128 : 132
-        );
-        const cardHeight = window.AprincarLayout.clamp(
-          cell.height * 0.86,
-          layout.touchTarget,
-          layout.portrait ? 112 : 106
-        );
-
-        const cardContainer = this.add.container(cell.x, cell.y);
-
-        const backGfx = this.add.graphics();
-        backGfx.fillStyle(0x7c3aed, 1);
-        backGfx.fillRoundedRect(
-          -cardWidth / 2,
-          -cardHeight / 2,
-          cardWidth,
-          cardHeight,
-          12
-        );
-        backGfx.lineStyle(3, 0xfbbf24, 0.85);
-        backGfx.strokeRoundedRect(
-          -cardWidth / 2,
-          -cardHeight / 2,
-          cardWidth,
-          cardHeight,
-          12
-        );
-
-        const starIcon = this.add.text(0, 0, '★', {
-          fontFamily: FONT,
-          fontSize: `${Math.round(Math.min(cardWidth, cardHeight) * 0.42)}px`,
-          fontStyle: 'bold',
-          color: '#fbbf24'
-        }).setOrigin(0.5);
-
-        const frontGfx = this.add.graphics();
-        frontGfx.fillStyle(0xffffff, 1);
-        frontGfx.fillRoundedRect(
-          -cardWidth / 2,
-          -cardHeight / 2,
-          cardWidth,
-          cardHeight,
-          12
-        );
-        frontGfx.lineStyle(3, 0x10b981, 0.85);
-        frontGfx.strokeRoundedRect(
-          -cardWidth / 2,
-          -cardHeight / 2,
-          cardWidth,
-          cardHeight,
-          12
-        );
-
-        const valueText = this.add.text(0, 0, card.value, {
-          fontFamily: FONT,
-          fontSize: `${Math.round(Math.min(cardWidth, cardHeight) * 0.40)}px`,
-          fontStyle: 'bold',
-          color: '#1e293b'
-        }).setOrigin(0.5);
-
-        frontGfx.setVisible(false);
-        valueText.setVisible(false);
-
-        const hitZone = this.add
-          .rectangle(0, 0, cardWidth, cardHeight, 0xffffff, 0.001)
+      PALETTE.forEach((entry, index) => {
+        const cell = cells[index];
+        const size = Math.max(layout.touchTarget, Math.min(cell.width, cell.height, 64));
+        const swatch = this.add.circle(cell.x, cell.y, size / 2 - 3, entry.color)
+          .setStrokeStyle(3, entry.name === this.selected.name ? C.ink : 0xffffff)
           .setInteractive({ useHandCursor: true });
-
-        cardContainer.add([backGfx, starIcon, frontGfx, valueText, hitZone]);
-        cardContainer.setData('card', card);
-        cardContainer.setData('backGfx', backGfx);
-        cardContainer.setData('starIcon', starIcon);
-        cardContainer.setData('frontGfx', frontGfx);
-        cardContainer.setData('valueText', valueText);
-        this.roundGroup.add(cardContainer);
-
-        this.target(
-          card.id,
-          cell.x,
-          cell.y,
-          cardWidth,
-          cardHeight,
-          'memory-card'
-        );
-
-        hitZone.on('pointerup', () => this.flipCard(cardContainer));
+        const label = this.add.text(cell.x, cell.y, entry.symbol, {
+          fontFamily: FONT,
+          fontSize: `${Math.round(size * 0.40)}px`,
+          fontStyle: 'bold',
+          color: entry.name === 'amarelo' ? '#5b4200' : '#ffffff'
+        }).setOrigin(0.5);
+        this.roundGroup.add([swatch, label]);
+        this.target(entry.name, cell.x, cell.y, size, size, 'palette-choice');
+        swatch.on('pointerup', () => {
+          if (this.locked) return;
+          this.selected = entry;
+          this.updateState({ selectedColor: entry.name, lastGesture: 'tap-color' });
+        });
       });
 
-      window.__APRINCAR_GAME_STATE__ = {
-        mode: 'memory',
-        variant: 'animals',
-        familyId: 'logic',
-        objective: window.APRINCAR_GAME_CONFIG.objective,
+      const roundShift = (this.level - 1) % PALETTE.length;
+      const requirements = [
+        PALETTE[(0 + roundShift) % PALETTE.length],
+        PALETTE[(1 + roundShift) % PALETTE.length],
+        PALETTE[(2 + roundShift) % PALETTE.length]
+      ];
+
+      const regions = [
+        { id: 'circulo', type: 'circle', x: 0.24, y: 0.42, w: 0.25, h: 0.34, target: requirements[0] },
+        { id: 'quadrado', type: 'rect', x: 0.72, y: 0.40, w: 0.30, h: 0.30, target: requirements[1] },
+        { id: 'jardim', type: 'rect', x: 0.50, y: 0.78, w: 0.58, h: 0.20, target: requirements[2] }
+      ];
+
+      const board = this.add.graphics();
+      board.fillStyle(0xffffff, 1);
+      board.fillRoundedRect(canvasBounds.left, canvasBounds.top, canvasBounds.width, canvasBounds.height, 18);
+      board.lineStyle(3, 0xe2e8f0, 1);
+      board.strokeRoundedRect(canvasBounds.left, canvasBounds.top, canvasBounds.width, canvasBounds.height, 18);
+      this.roundGroup.add(board);
+
+      for (const region of regions) {
+        const x = canvasBounds.left + region.x * canvasBounds.width;
+        const y = canvasBounds.top + region.y * canvasBounds.height;
+        const w = Math.max(layout.touchTarget, region.w * canvasBounds.width);
+        const h = Math.max(layout.touchTarget, region.h * canvasBounds.height);
+        let shape;
+        if (region.type === 'circle') {
+          shape = this.add.circle(x, y, Math.min(w, h) / 2, 0xf8fafc)
+            .setStrokeStyle(4, 0x94a3b8);
+        } else {
+          shape = this.add.rectangle(x, y, w, h, 0xf8fafc)
+            .setStrokeStyle(4, 0x94a3b8);
+        }
+        shape.setInteractive({ useHandCursor: true });
+
+        const cue = this.add.circle(x, y - h / 2 + 18, 14, region.target.color)
+          .setStrokeStyle(2, 0xffffff);
+        const cueSymbol = this.add.text(x, y - h / 2 + 18, region.target.symbol, {
+          fontFamily: FONT,
+          fontSize: '12px',
+          fontStyle: 'bold',
+          color: region.target.name === 'amarelo' ? '#5b4200' : '#ffffff'
+        }).setOrigin(0.5);
+
+        this.roundGroup.add([shape, cue, cueSymbol]);
+        this.regionObjects.set(region.id, shape);
+        this.target(region.id, x, y, w, h, 'paint-region');
+
+        shape.on('pointerup', () => {
+          if (this.locked) return;
+          shape.setFillStyle(this.selected.color, 1);
+          this.painted[region.id] = this.selected.name;
+          this.publish(regions, canvasBounds, 'paint-region');
+        });
+      }
+
+      const check = this.addCardButton(
+        checkPosition.x,
+        checkPosition.y,
+        checkPosition.width,
+        buttonHeight,
+        'Conferir pintura',
+        '__check__',
+        C.sun,
+        'action'
+      );
+      check.removeAllListeners('pointerup');
+      check.on('pointerup', async () => {
+        if (this.locked) return;
+        const correct = regions.filter((region) => this.painted[region.id] === region.target.name).length;
+        const score = correct / regions.length;
+        await this.submitResult(score === 1, {
+          correctRegions: correct,
+          totalRegions: regions.length,
+          paintedRegions: Object.keys(this.painted).length
+        });
+      });
+
+      this.challenge = {
+        answer: 'all-regions-correct',
+        difficulty: Math.min(0.75, 0.25 + this.level * 0.07)
+      };
+      this.publish(regions, canvasBounds, 'ready');
+    }
+
+    publish(regions, canvasBounds, lastGesture) {
+      const layout = this.layout;
+      this.updateState({
+        mode: CFG.mode,
+        variant: 'guided',
+        familyId: 'creative',
+        objective: CFG.objective,
         level: this.level,
         challenge: this.challenge,
         targets: this.testTargets,
-        matchedPairs: 0,
-        moves: 0,
+        painted: { ...this.painted },
+        regionRequirements: regions.map((region) => ({
+          id: region.id,
+          color: region.target.name,
+          symbol: region.target.symbol
+        })),
+        canvasBounds,
+        selectedColor: this.selected.name,
+        lastGesture,
         viewport: {
           width: layout.width,
           height: layout.height,
           portrait: layout.portrait
         },
-        attempts: this.attempts,
-        inputReady: true
-      };
-    }
-
-    flipCard(cardContainer) {
-      if (
-        this.locked ||
-        cardContainer.getData('matched') ||
-        cardContainer.getData('open')
-      ) {
-        return;
-      }
-
-      const backGfx = cardContainer.getData('backGfx');
-      const starIcon = cardContainer.getData('starIcon');
-      const frontGfx = cardContainer.getData('frontGfx');
-      const valueText = cardContainer.getData('valueText');
-
-      if (window.AprincarAudio) window.AprincarAudio.pop();
-
-      this.tweens.add({
-        targets: cardContainer,
-        scaleX: 0,
-        duration: 120,
-        onComplete: () => {
-          cardContainer.setData('open', true);
-          backGfx.setVisible(false);
-          starIcon.setVisible(false);
-          frontGfx.setVisible(true);
-          valueText.setVisible(true);
-
-          this.tweens.add({
-            targets: cardContainer,
-            scaleX: 1,
-            duration: 120
-          });
-        }
-      });
-
-      this.memoryOpen.push(cardContainer);
-      if (this.memoryOpen.length !== 2) return;
-
-      this.memoryMoves += 1;
-      this.locked = true;
-      this.updateState({ inputReady: false, moves: this.memoryMoves });
-
-      const [a, b] = this.memoryOpen;
-      const same = a.getData('card').pairId === b.getData('card').pairId;
-
-      this.time.delayedCall(450, async () => {
-        if (same) {
-          if (window.AprincarAudio) window.AprincarAudio.chime();
-          a.setData('matched', true);
-          b.setData('matched', true);
-          this.memoryMatched += 1;
-          this.updateState({
-            matchedPairs: this.memoryMatched,
-            moves: this.memoryMoves
-          });
-
-          if (this.memoryMatched === this.challenge.pairs) {
-            this.locked = false;
-            await this.submitResult(true, {
-              moves: this.memoryMoves,
-              pairs: this.challenge.pairs
-            });
-          }
-        } else {
-          for (const card of [a, b]) {
-            this.tweens.add({
-              targets: card,
-              scaleX: 0,
-              duration: 120,
-              onComplete: () => {
-                card.setData('open', false);
-                card.getData('frontGfx').setVisible(false);
-                card.getData('valueText').setVisible(false);
-                card.getData('backGfx').setVisible(true);
-                card.getData('starIcon').setVisible(true);
-                this.tweens.add({
-                  targets: card,
-                  scaleX: 1,
-                  duration: 120
-                });
-              }
-            });
-          }
-
-          this.updateState({
-            lastResult: 'failure',
-            moves: this.memoryMoves
-          });
-          await this.recordEvidence(false, { memoryMismatch: true });
-        }
-
-        this.memoryOpen = [];
-        this.locked = false;
-        this.updateState({ inputReady: true });
+        inputReady: !this.locked
       });
     }
   }
 
-  new Phaser.Game(window.createAprincarPhaserConfig(MemoryAnimalsScene));
+  new Phaser.Game(window.createAprincarPhaserConfig(GuidedPaintingScene));
 })();
 </script></body></html>

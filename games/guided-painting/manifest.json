@@ -1,14 +1,14 @@
 {
   "manifestVersion": 1,
-  "id": "aprincar.write-a",
+  "id": "aprincar.guided-painting",
   "kind": "game",
   "version": "1.1.0",
   "publisher": "aprincar",
   "name": {
-    "pt-BR": "Ateliê de Letras"
+    "pt-BR": "Pintura por Cores"
   },
   "description": {
-    "pt-BR": "Desenhe letras com apoio visual que diminui conforme você avança."
+    "pt-BR": "Escolha tintas e pinte partes grandes seguindo cor e símbolo."
   },
   "engines": {
     "aprincar": "^1.0.0",
@@ -17,36 +17,37 @@
   "entrypoints": {
     "game": "game.html"
   },
-  "permissions": [
-    "handwriting"
-  ],
+  "permissions": [],
   "optionalPermissions": [],
   "contributes": {
     "skills": [
-      "writing.trace-letter"
+      "perception.colors.match"
     ],
-    "secondarySkills": [],
+    "secondarySkills": [
+      "creativity.visual-expression"
+    ],
     "ageGuidance": {
-      "min": 4,
-      "max": 7
+      "min": 3,
+      "max": 5
     },
     "interests": [
-      "letters",
-      "writing"
+      "paint",
+      "colors",
+      "creative"
     ],
-    "playType": "practice"
+    "playType": "learning"
   },
   "experience": {
-    "fantasy": "Escola de escrita",
-    "mechanic": "trace",
-    "interaction": "draw",
+    "fantasy": "Livro de colorir",
+    "mechanic": "paint-regions",
+    "interaction": "tap",
     "progression": {
       "maxLevel": 5,
       "adaptive": true
     },
     "learningSignals": [
-      "strokeOrder",
-      "shape"
+      "classification",
+      "visualChoice"
     ]
   },
   "offline": true,

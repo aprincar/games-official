@@ -1,14 +1,14 @@
 {
   "manifestVersion": 1,
-  "id": "aprincar.write-a",
+  "id": "aprincar.cursive-letters",
   "kind": "game",
   "version": "1.1.0",
   "publisher": "aprincar",
   "name": {
-    "pt-BR": "Ateliê de Letras"
+    "pt-BR": "Oficina de Cursiva"
   },
   "description": {
-    "pt-BR": "Desenhe letras com apoio visual que diminui conforme você avança."
+    "pt-BR": "Acompanhe movimentos contínuos e pratique letras e ligações da escrita cursiva."
   },
   "engines": {
     "aprincar": "^1.0.0",
@@ -17,36 +17,37 @@
   "entrypoints": {
     "game": "game.html"
   },
-  "permissions": [
-    "handwriting"
-  ],
+  "permissions": [],
   "optionalPermissions": [],
   "contributes": {
     "skills": [
-      "writing.trace-letter"
+      "writing.cursive.trace"
     ],
-    "secondarySkills": [],
+    "secondarySkills": [
+      "writing.cursive.join"
+    ],
     "ageGuidance": {
-      "min": 4,
-      "max": 7
+      "min": 6,
+      "max": 9
     },
     "interests": [
       "letters",
-      "writing"
+      "writing",
+      "cursive"
     ],
     "playType": "practice"
   },
   "experience": {
-    "fantasy": "Escola de escrita",
-    "mechanic": "trace",
+    "fantasy": "Ateliê da cursiva",
+    "mechanic": "trace-cursive",
     "interaction": "draw",
     "progression": {
-      "maxLevel": 5,
+      "maxLevel": 8,
       "adaptive": true
     },
     "learningSignals": [
-      "strokeOrder",
-      "shape"
+      "pathCoverage",
+      "continuity"
     ]
   },
   "offline": true,

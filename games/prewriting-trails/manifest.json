@@ -1,14 +1,14 @@
 {
   "manifestVersion": 1,
-  "id": "aprincar.write-a",
+  "id": "aprincar.prewriting-trails",
   "kind": "game",
   "version": "1.1.0",
   "publisher": "aprincar",
   "name": {
-    "pt-BR": "Ateliê de Letras"
+    "pt-BR": "Caminhos da Escrita"
   },
   "description": {
-    "pt-BR": "Desenhe letras com apoio visual que diminui conforme você avança."
+    "pt-BR": "Siga caminhos com o dedo para treinar linhas, curvas e movimentos da escrita."
   },
   "engines": {
     "aprincar": "^1.0.0",
@@ -17,36 +17,37 @@
   "entrypoints": {
     "game": "game.html"
   },
-  "permissions": [
-    "handwriting"
-  ],
+  "permissions": [],
   "optionalPermissions": [],
   "contributes": {
     "skills": [
-      "writing.trace-letter"
+      "motor.prewriting.lines"
     ],
-    "secondarySkills": [],
+    "secondarySkills": [
+      "motor.prewriting.curves"
+    ],
     "ageGuidance": {
-      "min": 4,
-      "max": 7
+      "min": 3,
+      "max": 6
     },
     "interests": [
-      "letters",
-      "writing"
+      "writing",
+      "motor",
+      "tracing"
     ],
     "playType": "practice"
   },
   "experience": {
-    "fantasy": "Escola de escrita",
-    "mechanic": "trace",
+    "fantasy": "Trilhas do lápis",
+    "mechanic": "trace-path",
     "interaction": "draw",
     "progression": {
-      "maxLevel": 5,
+      "maxLevel": 6,
       "adaptive": true
     },
     "learningSignals": [
-      "strokeOrder",
-      "shape"
+      "pathCoverage",
+      "motorControl"
     ]
   },
   "offline": true,

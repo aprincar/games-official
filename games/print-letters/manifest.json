@@ -1,14 +1,14 @@
 {
   "manifestVersion": 1,
-  "id": "aprincar.write-a",
+  "id": "aprincar.print-letters",
   "kind": "game",
   "version": "1.1.0",
   "publisher": "aprincar",
   "name": {
-    "pt-BR": "Ateliê de Letras"
+    "pt-BR": "Letras de Forma"
   },
   "description": {
-    "pt-BR": "Desenhe letras com apoio visual que diminui conforme você avança."
+    "pt-BR": "Trace letras de forma com guias grandes e pratique cada movimento."
   },
   "engines": {
     "aprincar": "^1.0.0",
@@ -17,35 +17,36 @@
   "entrypoints": {
     "game": "game.html"
   },
-  "permissions": [
-    "handwriting"
-  ],
+  "permissions": [],
   "optionalPermissions": [],
   "contributes": {
     "skills": [
       "writing.trace-letter"
     ],
-    "secondarySkills": [],
+    "secondarySkills": [
+      "writing.copy-letter"
+    ],
     "ageGuidance": {
       "min": 4,
       "max": 7
     },
     "interests": [
       "letters",
-      "writing"
+      "writing",
+      "tracing"
     ],
     "playType": "practice"
   },
   "experience": {
-    "fantasy": "Escola de escrita",
-    "mechanic": "trace",
+    "fantasy": "Oficina das letras",
+    "mechanic": "trace-print-letter",
     "interaction": "draw",
     "progression": {
-      "maxLevel": 5,
+      "maxLevel": 6,
       "adaptive": true
     },
     "learningSignals": [
-      "strokeOrder",
+      "pathCoverage",
       "shape"
     ]
   },
