@@ -216,7 +216,7 @@ await scenario('Torre de Blocos: tap fallback e remocao mantem pilha visual comp
     }, { label: 'block-tower: input ready for tap fallback' });
     const sources = state.targets.filter((target) => target.kind === 'toggle');
 
-    await mouseTap(page.client, targetCenter(sources[0]));
+    await touchTap(page.client, targetCenter(sources[0]));
     state = await waitFor(async () => {
       const current = await page.state();
       return current.stackHeight === 1 ? current : false;
@@ -231,7 +231,7 @@ await scenario('Torre de Blocos: tap fallback e remocao mantem pilha visual comp
     assert.ok(first.y >= state.towerBounds.top);
     assert.ok(first.y <= state.towerBounds.top + state.towerBounds.height);
 
-    await mouseTap(page.client, targetCenter(sources[1]));
+    await touchTap(page.client, targetCenter(sources[1]));
     state = await waitFor(async () => {
       const current = await page.state();
       return current.stackHeight === 2 ? current : false;
@@ -242,7 +242,7 @@ await scenario('Torre de Blocos: tap fallback e remocao mantem pilha visual comp
     assert.equal(second.stackIndex, 1);
     assert.ok(second.y < first.y);
 
-    await mouseTap(page.client, { x: first.x, y: first.y });
+    await touchTap(page.client, { x: first.x, y: first.y });
     state = await waitFor(async () => {
       const current = await page.state();
       return current.stackHeight === 1 ? current : false;
