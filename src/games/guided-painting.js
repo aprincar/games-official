@@ -20,26 +20,66 @@
       const stage = layout.stage;
       const paletteHeight = layout.portrait ? 96 : 72;
       const buttonHeight = Math.max(layout.touchTarget, 58);
-      const canvasTop = stage.top + paletteHeight + 10;
-      const canvasBottom = stage.bottom - buttonHeight - 18;
-      const canvasBounds = {
-        left: stage.left,
-        top: canvasTop,
-        width: stage.width,
-        height: Math.max(210, canvasBottom - canvasTop)
-      };
+      const compactLandscape = layout.landscape && layout.height <= 560;
 
-      const paletteBounds = {
-        left: stage.left,
-        top: stage.top,
-        width: stage.width,
-        height: paletteHeight
-      };
-      const cells = window.AprincarLayout.row(PALETTE.length, paletteBounds, {
-        gap: 8,
-        minWidth: layout.touchTarget,
-        maxWidth: 72
-      });
+      let canvasBounds;
+      let paletteBounds;
+      let cells;
+      let checkPosition;
+
+      if (compactLandscape) {
+        const gap = 10;
+        const paletteWidth = Math.min(190, Math.max(150, stage.width * 0.24));
+        const checkWidth = Math.min(170, Math.max(140, stage.width * 0.20));
+        paletteBounds = {
+          left: stage.left,
+          top: stage.top,
+          width: paletteWidth,
+          height: stage.height
+        };
+        const paletteGrid = window.AprincarLayout.grid(PALETTE.length, paletteBounds, {
+          cols: 2,
+          gapX: 8,
+          gapY: 8
+        });
+        cells = paletteGrid.points;
+        canvasBounds = {
+          left: stage.left + paletteWidth + gap,
+          top: stage.top,
+          width: Math.max(260, stage.width - paletteWidth - checkWidth - gap * 2),
+          height: stage.height
+        };
+        checkPosition = {
+          x: stage.right - checkWidth / 2,
+          y: stage.centerY,
+          width: checkWidth
+        };
+      } else {
+        const canvasTop = stage.top + paletteHeight + 10;
+        const canvasBottom = stage.bottom - buttonHeight - 18;
+        canvasBounds = {
+          left: stage.left,
+          top: canvasTop,
+          width: stage.width,
+          height: Math.max(layout.touchTarget * 3.2, canvasBottom - canvasTop)
+        };
+        paletteBounds = {
+          left: stage.left,
+          top: stage.top,
+          width: stage.width,
+          height: paletteHeight
+        };
+        cells = window.AprincarLayout.row(PALETTE.length, paletteBounds, {
+          gap: 8,
+          minWidth: layout.touchTarget,
+          maxWidth: 72
+        });
+        checkPosition = {
+          x: stage.centerX,
+          y: stage.bottom - buttonHeight / 2 - 3,
+          width: Math.min(stage.width * 0.72, 260)
+        };
+      }
 
       this.selected = PALETTE[0];
       this.painted = {};
@@ -123,9 +163,9 @@
       }
 
       const check = this.addCardButton(
-        stage.centerX,
-        stage.bottom - buttonHeight / 2 - 3,
-        Math.min(stage.width * 0.72, 260),
+        checkPosition.x,
+        checkPosition.y,
+        checkPosition.width,
         buttonHeight,
         'Conferir pintura',
         '__check__',
