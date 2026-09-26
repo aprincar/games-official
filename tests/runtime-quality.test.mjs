@@ -10,6 +10,11 @@ const fruitBasket = fs.readFileSync(new URL('../src/games/fruit-basket.js', impo
 const blockTower = fs.readFileSync(new URL('../src/games/block-tower.js', import.meta.url), 'utf8');
 const browserHarness = fs.readFileSync(new URL('./browser-harness.mjs', import.meta.url), 'utf8');
 const registryBuilder = fs.readFileSync(new URL('../scripts/build-registry.mjs', import.meta.url), 'utf8');
+const prewriting = fs.readFileSync(new URL('../src/games/prewriting-trails.js', import.meta.url), 'utf8');
+const printLettersSource = fs.readFileSync(new URL('../src/games/print-letters.js', import.meta.url), 'utf8');
+const cursiveSource = fs.readFileSync(new URL('../src/games/cursive-letters.js', import.meta.url), 'utf8');
+const guidedPaintingSource = fs.readFileSync(new URL('../src/games/guided-painting.js', import.meta.url), 'utf8');
+const traceToolsSource = fs.readFileSync(new URL('../src/common/trace-tools.js', import.meta.url), 'utf8');
 
 test('Phaser rounds clean global input listeners before installing new round handlers', () => {
   assert.match(runtime, /this\.input\.off\(['"]drag['"]\)/);
@@ -72,4 +77,20 @@ test('registry publishes the canonical educational objective without changing Ma
   assert.match(registryBuilder, /objective:\s*gameConfig\?\.objective/);
   assert.match(registryBuilder, /\{ 'pt-BR': gameConfig\.objective \}/);
   assert.doesNotMatch(registryBuilder, /manifest\.manifestVersion\s*=/);
+});
+
+
+test('new writing progression shares path-based tracing and remains touch-first', () => {
+  assert.match(traceToolsSource, /function coverage/);
+  for (const source of [prewriting, printLettersSource, cursiveSource]) {
+    assert.match(source, /draw-zone/);
+    assert.match(source, /TRACE\.coverage/);
+    assert.match(source, /inputReady:\s*true/);
+  }
+});
+
+test('guided painting pairs color with symbols and exposes large paint regions', () => {
+  assert.match(guidedPaintingSource, /paint-region/);
+  assert.match(guidedPaintingSource, /symbol/);
+  assert.match(guidedPaintingSource, /Conferir pintura/);
 });

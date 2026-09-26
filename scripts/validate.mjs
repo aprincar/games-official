@@ -49,6 +49,16 @@ for (const [name, dir] of directories) {
     errors.push(`${name}: sensitive permissions must be optional and explicitly granted by the Host`);
   if (manifest.offline !== true && !(Array.isArray(manifest.optionalPermissions) && manifest.optionalPermissions.includes('network')))
     errors.push(`${name}: non-offline games must declare network in optionalPermissions`);
+  const age = manifest.contributes?.ageGuidance;
+  if (
+    !age ||
+    !Number.isInteger(age.min) ||
+    !Number.isInteger(age.max) ||
+    age.min < 2 ||
+    age.max > 10 ||
+    age.min > age.max
+  )
+    errors.push(`${name}: invalid ageGuidance`);
   if (!Array.isArray(manifest.contributes?.skills) || manifest.contributes.skills.length === 0)
     errors.push(`${name}: skills missing`);
   else {
