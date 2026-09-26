@@ -75,6 +75,7 @@ test('browser harness waits for Chrome exit and retries temporary directory clea
 test('registry publishes the canonical educational objective without changing Manifest Schema 1', () => {
   assert.match(registryBuilder, /gameConfigs/);
   assert.match(registryBuilder, /objective:\s*gameConfig\?\.objective/);
+  assert.match(registryBuilder, /secondarySkills:\s*manifest\.contributes\.secondarySkills/);
   assert.match(registryBuilder, /\{ 'pt-BR': gameConfig\.objective \}/);
   assert.doesNotMatch(registryBuilder, /manifest\.manifestVersion\s*=/);
 });
