@@ -1,5 +1,5 @@
 name: Materialize official games
-# regenerate after 14-game contract update
+# regenerate after fourteen-game distinctness update
 
 on:
   push:
