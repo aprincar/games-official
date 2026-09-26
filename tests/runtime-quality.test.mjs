@@ -9,6 +9,7 @@ const brand = fs.readFileSync(new URL('../src/runtime/brand.js', import.meta.url
 const fruitBasket = fs.readFileSync(new URL('../src/games/fruit-basket.js', import.meta.url), 'utf8');
 const blockTower = fs.readFileSync(new URL('../src/games/block-tower.js', import.meta.url), 'utf8');
 const browserHarness = fs.readFileSync(new URL('./browser-harness.mjs', import.meta.url), 'utf8');
+const registryBuilder = fs.readFileSync(new URL('../scripts/build-registry.mjs', import.meta.url), 'utf8');
 
 test('Phaser rounds clean global input listeners before installing new round handlers', () => {
   assert.match(runtime, /this\.input\.off\(['"]drag['"]\)/);
@@ -63,4 +64,12 @@ test('browser harness waits for Chrome exit and retries temporary directory clea
   assert.match(browserHarness, /waitForProcessExit/);
   assert.match(browserHarness, /maxRetries:\s*8/);
   assert.match(browserHarness, /retryDelay:\s*75/);
+});
+
+
+test('registry publishes the canonical educational objective without changing Manifest Schema 1', () => {
+  assert.match(registryBuilder, /gameConfigs/);
+  assert.match(registryBuilder, /objective:\s*gameConfig\?\.objective/);
+  assert.match(registryBuilder, /\{ 'pt-BR': gameConfig\.objective \}/);
+  assert.doesNotMatch(registryBuilder, /manifest\.manifestVersion\s*=/);
 });
