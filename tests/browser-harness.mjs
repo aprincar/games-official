@@ -451,6 +451,38 @@ export async function touchDrag(client, from, to, steps = 8) {
   await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 }
 
+export async function touchPath(client, points, stepsPerSegment = 5) {
+  if (!Array.isArray(points) || points.length < 2) throw new Error('touchPath requires at least 2 points');
+  const first = points[0];
+  await client.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x: first.x, y: first.y, id: 1, radiusX: 1, radiusY: 1, force: 1 }],
+  });
+  await sleep(24);
+  for (let segment = 1; segment < points.length; segment += 1) {
+    const from = points[segment - 1];
+    const to = points[segment];
+    for (let step = 1; step <= stepsPerSegment; step += 1) {
+      const ratio = step / stepsPerSegment;
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{
+          x: from.x + (to.x - from.x) * ratio,
+          y: from.y + (to.y - from.y) * ratio,
+          id: 1,
+          radiusX: 1,
+          radiusY: 1,
+          force: 1,
+        }],
+      });
+      await sleep(16);
+    }
+  }
+  await sleep(24);
+  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await sleep(24);
+}
+
 export async function waitForResult(page, result, timeoutMs = 2500) {
   return waitFor(async () => {
     const state = await page.state();

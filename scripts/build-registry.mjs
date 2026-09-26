@@ -40,6 +40,7 @@ for (const slug of fs.readdirSync(gamesDirectory)) {
     description: manifest.description,
     objective: gameConfig?.objective ? { 'pt-BR': gameConfig.objective } : undefined,
     skills: manifest.contributes.skills,
+    secondarySkills: manifest.contributes.secondarySkills ?? [],
     ageGuidance: manifest.contributes.ageGuidance,
     manifestUrl: `${baseUrl}/extensions/${slug}/manifest.json`,
     entryUrl: `${baseUrl}/extensions/${slug}/game.html`,

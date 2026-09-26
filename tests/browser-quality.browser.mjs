@@ -7,6 +7,7 @@ import {
   targetBy,
   targetCenter,
   touchDrag,
+  touchPath,
   touchTap,
   waitFor,
   waitForInputReady,
@@ -215,7 +216,7 @@ await scenario('Torre de Blocos: tap fallback e remocao mantem pilha visual comp
     }, { label: 'block-tower: input ready for tap fallback' });
     const sources = state.targets.filter((target) => target.kind === 'toggle');
 
-    await mouseTap(page.client, targetCenter(sources[0]));
+    await touchTap(page.client, targetCenter(sources[0]));
     state = await waitFor(async () => {
       const current = await page.state();
       return current.stackHeight === 1 ? current : false;
@@ -230,7 +231,7 @@ await scenario('Torre de Blocos: tap fallback e remocao mantem pilha visual comp
     assert.ok(first.y >= state.towerBounds.top);
     assert.ok(first.y <= state.towerBounds.top + state.towerBounds.height);
 
-    await mouseTap(page.client, targetCenter(sources[1]));
+    await touchTap(page.client, targetCenter(sources[1]));
     state = await waitFor(async () => {
       const current = await page.state();
       return current.stackHeight === 2 ? current : false;
@@ -241,7 +242,7 @@ await scenario('Torre de Blocos: tap fallback e remocao mantem pilha visual comp
     assert.equal(second.stackIndex, 1);
     assert.ok(second.y < first.y);
 
-    await mouseTap(page.client, { x: first.x, y: first.y });
+    await touchTap(page.client, { x: first.x, y: first.y });
     state = await waitFor(async () => {
       const current = await page.state();
       return current.stackHeight === 1 ? current : false;
@@ -293,7 +294,7 @@ await scenario('Torre de Blocos: drag pointer monta a torre e conclui', async ()
 });
 
 await scenario('Familia Cores e Criacao: portrait mobile mantem alvos e desenho tocaveis', async () => {
-  for (const slug of ['color-match', 'paint-free']) {
+  for (const slug of ['color-match', 'paint-free', 'guided-painting']) {
     await withGame(
       slug,
       { touch: true, viewport: { width: 390, height: 844, mobile: true } },
@@ -305,7 +306,7 @@ await scenario('Familia Cores e Criacao: portrait mobile mantem alvos e desenho 
         assert.equal(state.viewport.portrait, true);
 
         const interactive = (state.targets || []).filter((target) =>
-          ['drag-source', 'drop-zone', 'palette-choice', 'draw-zone', 'action'].includes(target.kind)
+          ['drag-source', 'drop-zone', 'palette-choice', 'draw-zone', 'paint-region', 'action'].includes(target.kind)
         );
         assert.ok(interactive.length > 0, slug + ': nenhum alvo interativo publicado');
 
@@ -422,7 +423,7 @@ await scenario('Trem dos Padroes: attempts, assistance, drag e reset por rodada'
 });
 
 await scenario('Familia Letras e Escrita: portrait mobile mantem alvos e desenho tocaveis', async () => {
-  for (const slug of ['letter-hunt', 'write-a']) {
+  for (const slug of ['letter-hunt', 'write-a', 'prewriting-trails', 'print-letters', 'cursive-letters']) {
     await withGame(
       slug,
       { touch: true, viewport: { width: 390, height: 844, mobile: true } },
@@ -521,6 +522,58 @@ await scenario('Atelie de Letras: capability nao reconhecida gera falha recupera
     await waitForInputReady(page);
     await assertEvidence(page, 'failure');
   });
+});
+
+
+for (const tracingGame of [
+  ['prewriting-trails', 'Caminhos da Escrita'],
+  ['print-letters', 'Letras de Forma'],
+  ['cursive-letters', 'Oficina de Cursiva'],
+]) {
+  await scenario(tracingGame[1] + ': touch segue guia e conclui no celular', async () => {
+    await withGame(
+      tracingGame[0],
+      { touch: true, viewport: { width: 390, height: 844, mobile: true } },
+      async (page) => {
+        let state = await page.state();
+        assert.equal(state.viewport.portrait, true);
+        assert.ok(Array.isArray(state.guidePoints) && state.guidePoints.length > 0);
+        for (const stroke of state.guidePoints) {
+          assert.ok(stroke.length >= 2, tracingGame[0] + ': guia sem pontos');
+          await touchPath(page.client, stroke, 7);
+        }
+        state = await page.state();
+        assert.ok(state.strokeCount >= 1, tracingGame[0] + ': traço não registrado');
+        await touchTap(page.client, targetCenter(targetBy(state, 'action', 'Conferir')));
+        await waitForResult(page, 'success', 5000);
+        await assertEvidence(page, 'success');
+      }
+    );
+  });
+}
+
+await scenario('Pintura por Cores: pistas por cor e símbolo podem ser corrigidas e concluídas', async () => {
+  await withGame(
+    'guided-painting',
+    { touch: true, viewport: { width: 390, height: 844, mobile: true } },
+    async (page) => {
+      let state = await page.state();
+      assert.equal(state.familyId, 'creative');
+      assert.ok(Array.isArray(state.regionRequirements) && state.regionRequirements.length === 3);
+
+      for (const requirement of state.regionRequirements) {
+        await touchTap(page.client, targetCenter(targetBy(state, 'palette-choice', requirement.color)));
+        state = await page.state();
+        await touchTap(page.client, targetCenter(targetBy(state, 'paint-region', requirement.id)));
+        state = await page.state();
+      }
+
+      assert.equal(Object.keys(state.painted || {}).length, 3);
+      await touchTap(page.client, targetCenter(targetBy(state, 'action', 'Conferir pintura')));
+      await waitForResult(page, 'success', 5000);
+      await assertEvidence(page, 'success');
+    }
+  );
 });
 
 await scenario('Pintura Livre: touch desenho persiste no storage e produz evidence observado', async () => {
@@ -673,7 +726,7 @@ await scenario('Formas no Espaco 3D: mobile portrait suporta touch, rotacao, ret
 });
 
 
-await scenario('Matriz responsiva: 10 jogos permanecem utilizaveis em celular, landscape, tablet e desktop', async () => {
+await scenario('Matriz responsiva: 14 jogos permanecem utilizaveis em celular, landscape, tablet e desktop', async () => {
   const games = [
     'counting-animals',
     'fruit-basket',
@@ -682,7 +735,11 @@ await scenario('Matriz responsiva: 10 jogos permanecem utilizaveis em celular, l
     'pattern-play',
     'letter-hunt',
     'write-a',
+    'prewriting-trails',
+    'print-letters',
+    'cursive-letters',
     'paint-free',
+    'guided-painting',
     'memory-animals',
     'space-shapes-3d',
   ];
@@ -706,6 +763,7 @@ await scenario('Matriz responsiva: 10 jogos permanecem utilizaveis em celular, l
     'memory-card',
     'draw-zone',
     'palette-choice',
+    'paint-region',
     'shape',
   ]);
 
@@ -785,4 +843,4 @@ if (failures.length) {
   throw new Error('Browser quality gate falhou em ' + failures.length + ' cenario(s):\n' + summary);
 }
 
-console.log('Browser quality gate: 10 jogos oficiais exercitados com sucesso.');
+console.log('Browser quality gate: 14 jogos oficiais exercitados com sucesso.');

@@ -44,5 +44,7 @@
   "reading.decode-syllable",
   "reading.decode-word",
   "creativity.visual-expression",
-  "computing.sequence.commands"
+  "computing.sequence.commands",
+  "writing.cursive.trace",
+  "writing.cursive.join"
 ]

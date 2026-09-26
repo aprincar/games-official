@@ -30,7 +30,7 @@ const baseManifest = {
   engines: { aprincar: '^1.0.0', sdkProtocol: 1 },
   entrypoints: { game: 'game.html' },
   permissions: [], optionalPermissions: [],
-  contributes: { skills: ['math.counting.1-10'] },
+  contributes: { skills: ['math.counting.1-10'], ageGuidance: { min: 4, max: 7 } },
   experience: {
     fantasy: 'Fixture de aprendizagem',
     mechanic: 'tap-choice',
@@ -54,12 +54,12 @@ test('official validator rejects remote executable code in isolated fixtures', (
   assert.match(result.stderr, /remote executable/i);
 });
 
-test('all ten official games expose distinct V1.1 fantasies and mechanics', () => {
+test('all fourteen official games expose distinct fantasies and mechanics', () => {
   const root = new URL('../games/', import.meta.url);
   const manifests = fs.readdirSync(root, { withFileTypes: true }).filter((item) => item.isDirectory()).map((item) => JSON.parse(fs.readFileSync(new URL(`${item.name}/manifest.json`, root), 'utf8')));
-  assert.equal(manifests.length, 10);
-  assert.equal(new Set(manifests.map((manifest) => manifest.experience?.fantasy)).size, 10);
-  assert.equal(new Set(manifests.map((manifest) => manifest.experience?.mechanic)).size, 10);
+  assert.equal(manifests.length, 14);
+  assert.equal(new Set(manifests.map((manifest) => manifest.experience?.fantasy)).size, 14);
+  assert.equal(new Set(manifests.map((manifest) => manifest.experience?.mechanic)).size, 14);
   for (const manifest of manifests) assert.ok(manifest.experience?.learningSignals?.length);
 });
 
