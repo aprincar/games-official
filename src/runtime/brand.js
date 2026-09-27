@@ -1,47 +1,44 @@
 (() => {
   const colors = Object.freeze({
-    blue: '#4F6EF7',
-    blueStrong: '#3B55D9',
-    sun: '#FFC83D',
-    orange: '#FF9F43',
-    leaf: '#2FC98F',
-    coral: '#FF6B6B',
-    purple: '#8B6FF7',
-    navy: '#17213D',
-    ink: '#20263A',
+    blue: '#2563EB',
+    blueStrong: '#1D4ED8',
+    secondary: '#0EA5E9',
+    sun: '#FBBF24',
+    orange: '#F59E0B',
+    leaf: '#10B981',
+    coral: '#EF4444',
+    purple: '#7C3AED',
+    navy: '#0F172A',
+    ink: '#14213F',
   });
 
-  const markSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" data-brand-version="4" aria-hidden="true"><g id="aprincar-portal"><path d="M12.8 48.6 26.1 16.2c2.1-5.1 9.3-5.1 11.4 0l13.7 32.4c2.3 5.5-1.7 11.4-7.7 11.4H20.6c-6 0-10.1-5.9-7.8-11.4Z" fill="#4F6EF7"/><path d="M27.1 28.3c0-1.4 1.6-2.2 2.8-1.5l13.2 8.3a1.8 1.8 0 0 1 0 3L30 46.3a1.8 1.8 0 0 1-2.8-1.5V28.3Z" fill="#fff"/><circle cx="47.2" cy="15.5" r="6.3" fill="#FFC83D"/></g></svg>`;
+  const markSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" data-brand-version="approved-v1" aria-hidden="true"><defs><linearGradient id="a" x1="8" y1="8" x2="56" y2="58"><stop stop-color="#0EA5E9"/><stop offset=".5" stop-color="#2563EB"/><stop offset="1" stop-color="#1D4ED8"/></linearGradient></defs><g id="aprincar-approved"><path d="M12 52C14.5 28 23 12 32 12s17.5 16 20 40" fill="none" stroke="url(#a)" stroke-width="13" stroke-linecap="round"/><path d="M27 29.8c0-2.2 2.4-3.5 4.2-2.3l12.4 8c1.7 1.1 1.7 3.6 0 4.7l-12.4 8A2.8 2.8 0 0 1 27 45.9V29.8Z" fill="#FBBF24"/></g></svg>`;
+  const wordmark = `<span style="color:${colors.navy}">Apr</span><span style="color:${colors.blue}">incar</span>`;
+  const lockupHtml = `<span class="aprincar-game-lockup">${markSvg}<span class="aprincar-game-wordmark">${wordmark}</span></span>`;
+  const fontFamily = '"Poppins",Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
 
-  const wordmark =
-    `<span style="color:${colors.navy}">Apr</span><span style="color:${colors.blue}">incar</span>`;
-
-  const lockupHtml =
-    `<span class="aprincar-game-lockup">${markSvg}<span class="aprincar-game-wordmark">${wordmark}</span></span>`;
-
-  const fontFamily =
-    'ui-rounded,"Arial Rounded MT Bold","Trebuchet MS",Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
-
-  function addPhaser(scene, x = 26, y = 16) {
+  function addPhaser(scene, x = 18, y = 12) {
     const mark = scene.add.container(x, y);
     const glyph = scene.add.graphics();
 
-    glyph.fillStyle(0x4f6ef7, 1);
-    glyph.fillTriangle(3, 36, 20, 3, 38, 36);
+    glyph.lineStyle(9, 0x2563eb, 1);
+    glyph.beginPath();
+    glyph.moveTo(3, 37);
+    glyph.lineTo(13, 10);
+    glyph.quadraticBezierTo(20, -1, 27, 10);
+    glyph.lineTo(38, 37);
+    glyph.strokePath();
 
-    glyph.fillStyle(0xffffff, 1);
-    glyph.fillTriangle(17, 14, 17, 29, 30, 21.5);
+    glyph.fillStyle(0xfbbf24, 1);
+    glyph.fillTriangle(17, 15, 17, 31, 30, 23);
 
-    glyph.fillStyle(0xffc83d, 1);
-    glyph.fillCircle(35, 6, 5);
-
-    const apr = scene.add.text(47, 7, 'Apr', {
+    const apr = scene.add.text(48, 6, 'Apr', {
       fontFamily,
       fontSize: '18px',
       fontStyle: 'bold',
       color: colors.navy,
     });
-    const incar = scene.add.text(47 + apr.width - 1, 7, 'incar', {
+    const incar = scene.add.text(47 + apr.width, 6, 'incar', {
       fontFamily,
       fontSize: '18px',
       fontStyle: 'bold',
@@ -49,15 +46,9 @@
     });
 
     mark.add([glyph, apr, incar]);
-    mark.setData('brandVersion', 4);
+    mark.setData('brandVersion', 'approved-v1');
     return mark;
   }
 
-  window.APRINCAR_BRAND = Object.freeze({
-    colors,
-    fontFamily,
-    markSvg,
-    lockupHtml,
-    addPhaser,
-  });
+  window.APRINCAR_BRAND = Object.freeze({ colors, fontFamily, markSvg, lockupHtml, addPhaser });
 })();

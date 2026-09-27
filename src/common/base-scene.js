@@ -4,15 +4,15 @@
   const BRAND = window.APRINCAR_BRAND;
   const FONT = BRAND.fontFamily;
   const C = {
-    bg: 0xf7f6f2,
-    purple: 0x8b5cf6,
+    bg: 0xf8fbff,
+    purple: 0x7c3aed,
     blue: 0x2563eb,
-    coral: 0xf43f5e,
-    orange: 0xfb923c,
-    sun: 0xfbcb24,
-    leaf: 0x22c55e,
-    sky: 0x38bdf8,
-    ink: '#13203d',
+    coral: 0xef4444,
+    orange: 0xf59e0b,
+    sun: 0xfbbf24,
+    leaf: 0x10b981,
+    sky: 0x0ea5e9,
+    ink: '#14213f',
     white: 0xffffff
   };
 
@@ -45,7 +45,8 @@
     }
 
     createChrome() {
-      this.headerBackground = this.add.rectangle(0, 0, 1, 1, C.white).setStrokeStyle(1, 0xe2dfd7);
+      this.headerShadow = this.add.rectangle(0, 0, 1, 1, 0x0f172a, 0.06);
+      this.headerBackground = this.add.rectangle(0, 0, 1, 1, C.white).setStrokeStyle(1, 0xdce8f7);
       BRAND.addPhaser(this, this.mobileFirst ? 14 : 22, this.mobileFirst ? 14 : 16);
 
       this.titleText = this.add.text(0, 0, CFG.name, {
@@ -58,9 +59,9 @@
 
       this.levelText = this.add.text(0, 0, 'Fase 1', {
         fontFamily: FONT,
-        fontSize: this.mobileFirst ? '15px' : '18px',
+        fontSize: this.mobileFirst ? '14px' : '17px',
         fontStyle: 'bold',
-        color: '#6f5bd7'
+        color: '#2563EB'
       }).setOrigin(1, 0);
 
       this.promptText = this.add.text(0, 0, '', {
@@ -75,15 +76,15 @@
         fontFamily: FONT,
         fontSize: this.mobileFirst ? '17px' : '22px',
         fontStyle: 'bold',
-        color: '#5143a6',
+        color: '#2563EB',
         align: 'center'
       }).setOrigin(0.5);
 
-      this.starText = this.add.text(0, 0, '⭐ 0', {
+      this.starText = this.add.text(0, 0, '★ 0', {
         fontFamily: FONT,
         fontSize: this.mobileFirst ? '17px' : '22px',
         fontStyle: 'bold',
-        color: '#6f5bd7'
+        color: '#F59E0B'
       });
 
       this.layoutChrome();
@@ -102,6 +103,9 @@
 
       const layout = window.AprincarLayout.metrics(this);
       this.layout = layout;
+      this.headerShadow
+        .setPosition(layout.header.x, layout.header.y + 3)
+        .setSize(layout.header.width, layout.header.height);
       this.headerBackground
         .setPosition(layout.header.x, layout.header.y)
         .setSize(layout.header.width, layout.header.height);
@@ -157,19 +161,27 @@
         h = Math.max(h, minimum);
       }
 
-      const box = this.add.rectangle(x, y, w, h, color)
-        .setStrokeStyle(2, 0xe2dfd7)
-        .setInteractive({ useHandCursor: true });
+      const shadow = this.add.graphics();
+      shadow.fillStyle(0x0f172a, 0.08);
+      shadow.fillRoundedRect(x - w / 2, y - h / 2 + 4, w, h, Math.min(18, h / 3));
 
+      const visual = this.add.graphics();
+      visual.fillStyle(color, 1);
+      visual.fillRoundedRect(x - w / 2, y - h / 2, w, h, Math.min(18, h / 3));
+      visual.lineStyle(2, color === C.white ? 0xdce8f7 : color, 1);
+      visual.strokeRoundedRect(x - w / 2, y - h / 2, w, h, Math.min(18, h / 3));
+
+      const box = this.add.rectangle(x, y, w, h, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
+      const isYellow = color === C.sun || color === C.orange;
       const text = this.add.text(x, y, label, {
         fontFamily: FONT,
-        fontSize: `${Math.min(this.mobileFirst ? 28 : 34, h * 0.44)}px`,
+        fontSize: `${Math.min(this.mobileFirst ? 26 : 32, h * 0.40)}px`,
         fontStyle: 'bold',
-        color: color === C.white ? C.ink : '#ffffff',
+        color: color === C.white || isYellow ? C.ink : '#ffffff',
         align: 'center'
       }).setOrigin(0.5);
 
-      this.roundGroup.add([box, text]);
+      this.roundGroup.add([shadow, visual, box, text]);
       this.target(kind === 'action' ? label : value, x, y, w, h, kind);
       box.on('pointerup', () => this.choose(value, box));
       return box;
