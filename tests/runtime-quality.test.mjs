@@ -48,10 +48,10 @@ test('Three.js distinguishes drag using total pointer distance and does not shuf
 
 
 test('game runtime uses the locked approved Aprincar identity', () => {
-  assert.match(brand, /data-brand-version="4"/);
-  assert.match(brand, /aprincar-portal/);
-  assert.match(brand, /#4F6EF7/i);
-  assert.match(brand, /#FFC83D/i);
+  assert.match(brand, /data-brand-version="approved-v1"/);
+  assert.match(brand, /aprincar-approved/);
+  assert.match(brand, /#2563EB/i);
+  assert.match(brand, /#FBBF24/i);
   assert.doesNotMatch(brand, /aprincar-star/);
   assert.doesNotMatch(brand, /brandVersion', 3/);
 });
