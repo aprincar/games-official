@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-test('official game runtimes consume Aprincar Brand System v4 portal identity', () => {
+test('official game runtimes consume the locked approved Aprincar identity', () => {
   const brand = fs.readFileSync(new URL('../src/runtime/brand.js', import.meta.url), 'utf8');
   const phaser = fs.readFileSync(new URL('../src/runtime/phaser-runtime.js', import.meta.url), 'utf8');
   const three = fs.readFileSync(new URL('../src/runtime/three-runtime.js', import.meta.url), 'utf8');

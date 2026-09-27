@@ -47,7 +47,7 @@ test('Three.js distinguishes drag using total pointer distance and does not shuf
 });
 
 
-test('game runtime uses Aprincar portal brand v4 without the legacy star identity', () => {
+test('game runtime uses the locked approved Aprincar identity', () => {
   assert.match(brand, /data-brand-version="4"/);
   assert.match(brand, /aprincar-portal/);
   assert.match(brand, /#4F6EF7/i);
@@ -94,4 +94,14 @@ test('guided painting pairs color with symbols and exposes large paint regions',
   assert.match(guidedPaintingSource, /paint-region/);
   assert.match(guidedPaintingSource, /symbol/);
   assert.match(guidedPaintingSource, /Conferir pintura/);
+});
+
+
+test('approved game artwork exposes the complete fruit set without emoji fallbacks', () => {
+  const vectorArt = fs.readFileSync(new URL('../src/common/vector-art.js', import.meta.url), 'utf8');
+  for (const fruit of ['apple','banana','grape','orange','pear','strawberry','watermelon','pineapple','mango','kiwi']) {
+    assert.match(vectorArt, new RegExp(`type === ['"]${fruit}['"]|type === ['"][^'"]+['"] \\|\\| type === ['"]${fruit}['"]`));
+  }
+  assert.match(vectorArt, /Approved glossy fruit set/);
+  assert.match(fruitBasket, /FRUIT_TYPES = \['apple', 'banana', 'grape', 'orange', 'pear', 'strawberry', 'watermelon', 'pineapple', 'mango', 'kiwi'\]/);
 });
