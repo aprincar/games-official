@@ -1,7 +1,7 @@
 // Cesta de Frutas — Feira da Cesta
 (() => {
   const { C, FONT } = window.AprincarConstants;
-  const FRUIT_TYPES = ['apple', 'orange', 'strawberry', 'banana'];
+  const FRUIT_TYPES = ['apple', 'banana', 'grape', 'orange', 'pear', 'strawberry', 'watermelon', 'pineapple', 'mango', 'kiwi'];
 
   class FruitBasketScene extends window.AprincarBaseScene {
     nextRound() {
@@ -47,23 +47,15 @@
 
       const basketContainer = this.add.container(stage.centerX, basketY);
       const basketGfx = this.add.graphics();
-      basketGfx.fillStyle(0xc98749, 1);
-      basketGfx.fillRoundedRect(
-        -basketWidth / 2,
-        -basketHeight / 2,
-        basketWidth,
-        basketHeight,
-        16
-      );
-      basketGfx.lineStyle(4, 0x8f5b2c, 1);
-      basketGfx.strokeRoundedRect(
-        -basketWidth / 2,
-        -basketHeight / 2,
-        basketWidth,
-        basketHeight,
-        16
-      );
-      basketGfx.lineStyle(2, 0x8f5b2c, 0.4);
+      basketGfx.fillStyle(0x0f172a, 0.10);
+      basketGfx.fillEllipse(0, basketHeight * 0.48, basketWidth * 0.9, basketHeight * 0.24);
+      basketGfx.fillStyle(0x9a5a27, 1);
+      basketGfx.fillRoundedRect(-basketWidth / 2, -basketHeight / 2, basketWidth, basketHeight, 22);
+      basketGfx.fillStyle(0xc9823c, 1);
+      basketGfx.fillRoundedRect(-basketWidth / 2 + 5, -basketHeight / 2 + 5, basketWidth - 10, basketHeight - 10, 18);
+      basketGfx.fillStyle(0xe0a55e, 0.72);
+      basketGfx.fillRoundedRect(-basketWidth / 2 + 9, -basketHeight / 2 + 10, basketWidth - 18, 15, 8);
+      basketGfx.lineStyle(3, 0x9a5a27, 0.72);
       for (
         let x = -basketWidth / 2 + 28;
         x <= basketWidth / 2 - 28;
@@ -81,7 +73,9 @@
         fontFamily: FONT,
         fontSize: layout.portrait ? '36px' : '42px',
         fontStyle: 'bold',
-        color: '#ffffff'
+        color: '#ffffff',
+        stroke: '#8b4f20',
+        strokeThickness: 2
       }).setOrigin(0.5);
 
       basketContainer.add([basketGfx, this.counter]);
