@@ -5,14 +5,20 @@ window.AprincarVectorArt = (() => {
     drawAnimal(graphics, type, x, y, size = 64) {
       graphics.save();
       const s = size / 64;
+      graphics.fillStyle(0x0f172a, 0.10);
+      graphics.fillEllipse(x + 2 * s, y + 28 * s, 46 * s, 10 * s);
       
       if (type === 'lion' || type === 'leao') {
-        // Juba
-        graphics.fillStyle(0xd97706, 1);
-        graphics.fillCircle(x, y, 32 * s);
+        // Juba com profundidade
+        graphics.fillStyle(0xb85b12, 1);
+        graphics.fillCircle(x, y, 33 * s);
+        graphics.fillStyle(0xde7b18, 1);
+        graphics.fillCircle(x, y - 2 * s, 29 * s);
         // Cabeça
-        graphics.fillStyle(0xfbbf24, 1);
+        graphics.fillStyle(0xf7b934, 1);
         graphics.fillCircle(x, y, 22 * s);
+        graphics.fillStyle(0xffd765, 0.82);
+        graphics.fillEllipse(x - 6 * s, y - 7 * s, 18 * s, 12 * s);
         // Orelhas
         graphics.fillStyle(0xd97706, 1);
         graphics.fillCircle(x - 18 * s, y - 18 * s, 8 * s);
@@ -159,65 +165,79 @@ window.AprincarVectorArt = (() => {
       graphics.restore();
     },
 
-    // Draw Realistic Tasty Fruits
+    // Approved glossy fruit set used by counting and classification games.
     drawFruit(graphics, type, x, y, size = 56) {
       graphics.save();
       const s = size / 56;
+      const shadow = (w = 38, h = 9) => {
+        graphics.fillStyle(0x0f172a, 0.11);
+        graphics.fillEllipse(x + 2 * s, y + 23 * s, w * s, h * s);
+      };
+      const shine = (dx = -9, dy = -9, w = 7, h = 10) => {
+        graphics.fillStyle(0xffffff, 0.42);
+        graphics.fillEllipse(x + dx * s, y + dy * s, w * s, h * s);
+      };
+      const leaf = (dx = 7, dy = -22, rot = -0.35) => {
+        graphics.save();
+        graphics.translateCanvas(x + dx * s, y + dy * s);
+        graphics.rotateCanvas(rot);
+        graphics.fillStyle(0x22a447, 1);
+        graphics.fillEllipse(0, 0, 12 * s, 6 * s);
+        graphics.restore();
+      };
 
       if (type === 'apple' || type === 'maca') {
-        // Maçã Vermelha
-        graphics.fillStyle(0x15803d, 1);
-        graphics.fillEllipse(x + 6 * s, y - 22 * s, 8 * s, 5 * s); // Folha
-        graphics.fillStyle(0x78350f, 1);
-        graphics.fillRect(x - 1.5 * s, y - 24 * s, 3 * s, 8 * s); // Cabinho
-        graphics.fillStyle(0xef4444, 1);
-        graphics.fillCircle(x - 8 * s, y - 2 * s, 16 * s);
-        graphics.fillCircle(x + 8 * s, y - 2 * s, 16 * s);
-        graphics.fillCircle(x, y + 6 * s, 15 * s);
-        // Brilho
-        graphics.fillStyle(0xffffff, 0.45);
-        graphics.fillEllipse(x - 10 * s, y - 8 * s, 5 * s, 8 * s);
+        shadow(42, 9);
+        graphics.fillStyle(0x7c2d12, 1); graphics.fillRect(x - 2 * s, y - 25 * s, 4 * s, 10 * s);
+        leaf();
+        graphics.fillStyle(0xd92e3d, 1); graphics.fillCircle(x - 8 * s, y - 1 * s, 17 * s); graphics.fillCircle(x + 8 * s, y - 1 * s, 17 * s);
+        graphics.fillStyle(0xf04450, 1); graphics.fillCircle(x, y + 7 * s, 16 * s);
+        shine(-10,-8,7,11);
       } else if (type === 'banana') {
-        // Banana Amarela
-        graphics.lineStyle(16 * s, 0xfacc15, 1);
-        graphics.beginPath();
-        graphics.arc(x + 10 * s, y - 10 * s, 26 * s, 1.2, 2.7);
-        graphics.strokePath();
-        graphics.fillStyle(0x713f12, 1);
-        graphics.fillCircle(x - 14 * s, y + 12 * s, 3 * s); // Ponta
-        graphics.fillCircle(x + 22 * s, y - 16 * s, 4 * s); // Topo
+        shadow(46, 8);
+        graphics.lineStyle(19 * s, 0xe6a915, 1); graphics.beginPath(); graphics.arc(x + 7 * s, y - 8 * s, 29 * s, 1.05, 2.75); graphics.strokePath();
+        graphics.lineStyle(13 * s, 0xffdf36, 1); graphics.beginPath(); graphics.arc(x + 7 * s, y - 9 * s, 28 * s, 1.05, 2.75); graphics.strokePath();
+        graphics.lineStyle(4 * s, 0xfff19a, 0.8); graphics.beginPath(); graphics.arc(x + 4 * s, y - 12 * s, 25 * s, 1.18, 2.45); graphics.strokePath();
+        graphics.fillStyle(0x713f12,1); graphics.fillCircle(x-17*s,y+13*s,3*s); graphics.fillCircle(x+24*s,y-18*s,4*s);
       } else if (type === 'orange' || type === 'laranja') {
-        // Laranja
-        graphics.fillStyle(0x16a34a, 1);
-        graphics.fillEllipse(x + 5 * s, y - 20 * s, 9 * s, 5 * s); // Folha
-        graphics.fillStyle(0x78350f, 1);
-        graphics.fillRect(x - 1.5 * s, y - 20 * s, 3 * s, 6 * s); // Cabinho
-        graphics.fillStyle(0xf97316, 1);
-        graphics.fillCircle(x, y, 20 * s);
-        graphics.fillStyle(0xfbbf24, 0.4);
-        graphics.fillCircle(x - 6 * s, y - 6 * s, 8 * s);
+        shadow(); leaf(8,-21,-0.2);
+        graphics.fillStyle(0xe96c10,1); graphics.fillCircle(x,y,21*s);
+        graphics.fillStyle(0xff861c,1); graphics.fillCircle(x-2*s,y-2*s,19*s);
+        shine(-7,-8,8,10);
+        graphics.fillStyle(0xfbbf24,0.36); for(const [dx,dy] of [[8,-5],[11,5],[-2,11]]) graphics.fillCircle(x+dx*s,y+dy*s,1.2*s);
       } else if (type === 'strawberry' || type === 'morango') {
-        // Morango
-        graphics.fillStyle(0xdc2626, 1);
-        graphics.fillTriangle(x - 16 * s, y - 10 * s, x + 16 * s, y - 10 * s, x, y + 20 * s);
-        graphics.fillCircle(x, y - 6 * s, 16 * s);
-        // Folhas verdes no topo
-        graphics.fillStyle(0x16a34a, 1);
-        graphics.fillTriangle(x - 12 * s, y - 16 * s, x - 4 * s, y - 8 * s, x, y - 20 * s);
-        graphics.fillTriangle(x + 12 * s, y - 16 * s, x + 4 * s, y - 8 * s, x, y - 20 * s);
-        // Sementinhas douradas
-        graphics.fillStyle(0xfef08a, 0.9);
-        graphics.fillCircle(x - 6 * s, y - 2 * s, 1.2 * s);
-        graphics.fillCircle(x + 6 * s, y - 2 * s, 1.2 * s);
-        graphics.fillCircle(x, y + 5 * s, 1.2 * s);
-        graphics.fillCircle(x - 5 * s, y + 8 * s, 1.2 * s);
-        graphics.fillCircle(x + 5 * s, y + 8 * s, 1.2 * s);
+        shadow(36,8);
+        graphics.fillStyle(0xd92735,1); graphics.fillCircle(x,y-7*s,17*s); graphics.fillTriangle(x-16*s,y-5*s,x+16*s,y-5*s,x,y+24*s);
+        graphics.fillStyle(0xf13b48,1); graphics.fillCircle(x-3*s,y-8*s,14*s); shine(-9,-11,6,8);
+        graphics.fillStyle(0x22a447,1);
+        graphics.fillTriangle(x-15*s,y-15*s,x-3*s,y-8*s,x-6*s,y-24*s); graphics.fillTriangle(x+15*s,y-15*s,x+3*s,y-8*s,x+6*s,y-24*s); graphics.fillTriangle(x-7*s,y-17*s,x+7*s,y-17*s,x,y-26*s);
+        graphics.fillStyle(0xffdc63,1); for(const [dx,dy] of [[-8,-2],[7,-1],[-4,7],[5,9],[0,16]]) graphics.fillCircle(x+dx*s,y+dy*s,1.4*s);
+      } else if (type === 'grape' || type === 'uva') {
+        shadow(40,8); leaf(9,-24,-0.35);
+        const pts=[[-10,-10],[2,-13],[13,-7],[-13,2],[0,0],[12,5],[-6,12],[7,15]];
+        pts.forEach(([dx,dy],i)=>{graphics.fillStyle(i%2?0x7c3aed:0x9333ea,1);graphics.fillCircle(x+dx*s,y+dy*s,9*s);});
+        shine(-14,-14,5,6);
+      } else if (type === 'pear' || type === 'pera') {
+        shadow(36,8); graphics.fillStyle(0x6b3d12,1);graphics.fillRect(x-1*s,y-26*s,3*s,9*s);leaf(7,-24,-.3);
+        graphics.fillStyle(0x79bf19,1);graphics.fillCircle(x,y+7*s,18*s);graphics.fillEllipse(x,y-8*s,14*s,20*s);graphics.fillStyle(0xa4dd24,.75);graphics.fillEllipse(x-5*s,y-5*s,11*s,22*s);shine(-8,-10,5,9);
+      } else if (type === 'watermelon' || type === 'melancia') {
+        shadow(44,8); graphics.fillStyle(0x17853e,1); graphics.fillTriangle(x-25*s,y+17*s,x+24*s,y+17*s,x+19*s,y-18*s);
+        graphics.fillStyle(0xf8f2d0,1);graphics.fillTriangle(x-21*s,y+13*s,x+20*s,y+13*s,x+16*s,y-14*s);
+        graphics.fillStyle(0xf04755,1);graphics.fillTriangle(x-18*s,y+10*s,x+17*s,y+10*s,x+13*s,y-11*s);
+        graphics.fillStyle(0x3f1d18,1);for(const [dx,dy] of [[-8,2],[2,5],[8,-1]]) graphics.fillEllipse(x+dx*s,y+dy*s,2*s,4*s);
+      } else if (type === 'pineapple' || type === 'abacaxi') {
+        shadow(34,8);graphics.fillStyle(0xf3a91a,1);graphics.fillEllipse(x,y+4*s,17*s,23*s);
+        graphics.lineStyle(2*s,0xd58012,.7);for(let d=-12;d<=12;d+=8){graphics.lineBetween(x-14*s,y+(d-4)*s,x+14*s,y+(d+12)*s);graphics.lineBetween(x+14*s,y+(d-4)*s,x-14*s,y+(d+12)*s);}
+        graphics.fillStyle(0x22a447,1);for(const dx of [-10,-5,0,5,10]) graphics.fillTriangle(x,y-18*s,x+dx*s,y-38*s,x+(dx+5)*s,y-17*s);
+      } else if (type === 'mango' || type === 'manga') {
+        shadow(39,8);leaf(8,-21,-.2);graphics.fillStyle(0xf59e0b,1);graphics.fillEllipse(x,y+2*s,20*s,24*s);graphics.fillStyle(0xffbf35,.9);graphics.fillEllipse(x-6*s,y-4*s,14*s,20*s);graphics.fillStyle(0xef4444,.45);graphics.fillEllipse(x+9*s,y-6*s,8*s,14*s);shine(-9,-9,5,8);
+      } else if (type === 'kiwi') {
+        shadow(36,8);graphics.fillStyle(0x8b5a2b,1);graphics.fillCircle(x,y,21*s);graphics.fillStyle(0x78c82f,1);graphics.fillCircle(x,y,17*s);graphics.fillStyle(0xfff6c5,1);graphics.fillEllipse(x,y,7*s,9*s);graphics.fillStyle(0x2b1b0f,1);for(let i=0;i<10;i++){const a=i*Math.PI/5;graphics.fillEllipse(x+Math.cos(a)*11*s,y+Math.sin(a)*11*s,1.2*s,2.2*s);}
+        shine(-7,-9,5,7);
       } else {
-        // Uva
-        graphics.fillStyle(0x8b5cf6, 1);
-        graphics.fillCircle(x - 7 * s, y - 6 * s, 8 * s);
-        graphics.fillCircle(x + 7 * s, y - 6 * s, 8 * s);
-        graphics.fillCircle(x, y + 4 * s, 8 * s);
+        this.drawFruit(graphics, 'grape', x, y, size);
+        graphics.restore();
+        return;
       }
       graphics.restore();
     },

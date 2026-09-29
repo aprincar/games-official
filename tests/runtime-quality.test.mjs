@@ -47,11 +47,11 @@ test('Three.js distinguishes drag using total pointer distance and does not shuf
 });
 
 
-test('game runtime uses Aprincar portal brand v4 without the legacy star identity', () => {
-  assert.match(brand, /data-brand-version="4"/);
-  assert.match(brand, /aprincar-portal/);
-  assert.match(brand, /#4F6EF7/i);
-  assert.match(brand, /#FFC83D/i);
+test('game runtime uses the locked approved Aprincar identity', () => {
+  assert.match(brand, /data-brand-version="approved-v1"/);
+  assert.match(brand, /aprincar-approved/);
+  assert.match(brand, /#2563EB/i);
+  assert.match(brand, /#FBBF24/i);
   assert.doesNotMatch(brand, /aprincar-star/);
   assert.doesNotMatch(brand, /brandVersion', 3/);
 });
@@ -67,8 +67,8 @@ test('reversible counting publishes interactive targets at their current visual 
 
 test('browser harness waits for Chrome exit and retries temporary directory cleanup', () => {
   assert.match(browserHarness, /waitForProcessExit/);
-  assert.match(browserHarness, /maxRetries:\s*8/);
-  assert.match(browserHarness, /retryDelay:\s*75/);
+  assert.match(browserHarness, /removeDirectoryWithRetry/);
+  assert.match(browserHarness, /await sleep\(150\)/);
 });
 
 
@@ -94,4 +94,25 @@ test('guided painting pairs color with symbols and exposes large paint regions',
   assert.match(guidedPaintingSource, /paint-region/);
   assert.match(guidedPaintingSource, /symbol/);
   assert.match(guidedPaintingSource, /Conferir pintura/);
+});
+
+
+test('approved game artwork exposes the complete fruit set without emoji fallbacks', () => {
+  const vectorArt = fs.readFileSync(new URL('../src/common/vector-art.js', import.meta.url), 'utf8');
+  for (const fruit of ['apple','banana','grape','orange','pear','strawberry','watermelon','pineapple','mango','kiwi']) {
+    assert.match(vectorArt, new RegExp(`type === ['"]${fruit}['"]|type === ['"][^'"]+['"] \\|\\| type === ['"]${fruit}['"]`));
+  }
+  assert.match(vectorArt, /Approved glossy fruit set/);
+  assert.match(fruitBasket, /FRUIT_TYPES = \['apple', 'banana', 'grape', 'orange', 'pear', 'strawberry', 'watermelon', 'pineapple', 'mango', 'kiwi'\]/);
+});
+
+
+test('approved Phaser brand avoids unsupported Graphics curve APIs', () => {
+  assert.doesNotMatch(brand, /quadraticBezierTo/);
+  assert.match(brand, /glyph\.lineTo\(20, 4\)/);
+});
+
+test('browser cleanup retries whole profile removal after Chrome exits', () => {
+  assert.match(browserHarness, /removeDirectoryWithRetry/);
+  assert.match(browserHarness, /await sleep\(150\)/);
 });

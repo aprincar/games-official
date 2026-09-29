@@ -36,7 +36,7 @@
       };
 
       const savannaBg = this.add.graphics();
-      savannaBg.fillStyle(0xfef3c7, 0.42);
+      savannaBg.fillStyle(0xfffbeb, 1);
       savannaBg.fillRoundedRect(
         animalArea.left,
         animalArea.top,
@@ -44,7 +44,7 @@
         animalArea.height,
         20
       );
-      savannaBg.lineStyle(2, 0xfde68a, 0.85);
+      savannaBg.lineStyle(2, 0xf7d86b, 0.8);
       savannaBg.strokeRoundedRect(
         animalArea.left,
         animalArea.top,

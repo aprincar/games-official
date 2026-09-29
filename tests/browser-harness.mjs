@@ -212,6 +212,19 @@ async function waitForProcessExit(processRef, timeoutMs = 1500) {
   });
 }
 
+async function removeDirectoryWithRetry(directory, attempts = 12) {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      fs.rmSync(directory, { recursive: true, force: true });
+      return;
+    } catch (error) {
+      const retryable = error?.code === 'ENOTEMPTY' || error?.code === 'EBUSY' || error?.code === 'EPERM';
+      if (!retryable || attempt === attempts) throw error;
+      await sleep(Math.min(600, 75 * attempt));
+    }
+  }
+}
+
 async function launchChrome() {
   const chrome = findChrome();
   const debugPort = await freePort();
@@ -255,12 +268,11 @@ async function launchChrome() {
         processRef.kill('SIGKILL');
         await waitForProcessExit(processRef, 1000);
       }
-      fs.rmSync(userDataDir, {
-        recursive: true,
-        force: true,
-        maxRetries: 8,
-        retryDelay: 75
-      });
+      // Chrome may leave profile writers alive for a few milliseconds after the
+      // parent process exits. Retry the whole recursive removal instead of
+      // trusting a single rimraf pass.
+      await sleep(150);
+      await removeDirectoryWithRetry(userDataDir);
     },
   };
 }
