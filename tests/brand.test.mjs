@@ -14,7 +14,8 @@ test('official game runtimes consume the locked approved Aprincar identity', () 
   assert.match(brand, /#FBBF24/i);
   assert.match(brand, /fillTriangle/);
   assert.match(brand, /Poppins/);
-  assert.match(brand, /quadraticBezierTo/);
+  assert.doesNotMatch(brand, /quadraticBezierTo/);
+  assert.match(brand, /glyph\.lineTo\(20, 4\)/);
   assert.match(phaser, /APRINCAR_BRAND/);
   assert.match(three, /APRINCAR_BRAND/);
   assert.match(build, /brand\.js/);

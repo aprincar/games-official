@@ -67,8 +67,8 @@ test('reversible counting publishes interactive targets at their current visual 
 
 test('browser harness waits for Chrome exit and retries temporary directory cleanup', () => {
   assert.match(browserHarness, /waitForProcessExit/);
-  assert.match(browserHarness, /maxRetries:\s*8/);
-  assert.match(browserHarness, /retryDelay:\s*75/);
+  assert.match(browserHarness, /removeDirectoryWithRetry/);
+  assert.match(browserHarness, /await sleep\(150\)/);
 });
 
 
