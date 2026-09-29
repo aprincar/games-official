@@ -105,3 +105,14 @@ test('approved game artwork exposes the complete fruit set without emoji fallbac
   assert.match(vectorArt, /Approved glossy fruit set/);
   assert.match(fruitBasket, /FRUIT_TYPES = \['apple', 'banana', 'grape', 'orange', 'pear', 'strawberry', 'watermelon', 'pineapple', 'mango', 'kiwi'\]/);
 });
+
+
+test('approved Phaser brand avoids unsupported Graphics curve APIs', () => {
+  assert.doesNotMatch(brand, /quadraticBezierTo/);
+  assert.match(brand, /glyph\.lineTo\(20, 4\)/);
+});
+
+test('browser cleanup retries whole profile removal after Chrome exits', () => {
+  assert.match(browserHarness, /removeDirectoryWithRetry/);
+  assert.match(browserHarness, /await sleep\(150\)/);
+});

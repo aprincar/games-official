@@ -21,11 +21,14 @@
     const mark = scene.add.container(x, y);
     const glyph = scene.add.graphics();
 
+    // Keep the approved rounded-A silhouette with Graphics primitives that are
+    // supported by every Phaser 3 build shipped in the single-file games.
     glyph.lineStyle(9, 0x2563eb, 1);
     glyph.beginPath();
     glyph.moveTo(3, 37);
     glyph.lineTo(13, 10);
-    glyph.quadraticBezierTo(20, -1, 27, 10);
+    glyph.lineTo(20, 4);
+    glyph.lineTo(27, 10);
     glyph.lineTo(38, 37);
     glyph.strokePath();
 
